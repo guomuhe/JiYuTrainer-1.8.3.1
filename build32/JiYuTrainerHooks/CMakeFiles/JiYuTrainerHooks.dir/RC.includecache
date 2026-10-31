@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+D:/code/JiYuTrainer-master/JiYuTrainerHooks/JiYuTrainerHooks.rc
+resource.h
+D:/code/JiYuTrainer-master/JiYuTrainerHooks/resource.h
+winres.h
+D:/code/JiYuTrainer-master/JiYuTrainerHooks/winres.h
+
+D:/code/JiYuTrainer-master/JiYuTrainerHooks/resource.h
+

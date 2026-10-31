@@ -1,0 +1,3 @@
+D:\code\cmake\bin\cmake.exe -E rm -f CMakeFiles\JiYuTrainerHooks.dir/objects.a
+D:\code\mingw32\bin\ar.exe qc CMakeFiles\JiYuTrainerHooks.dir/objects.a @CMakeFiles\JiYuTrainerHooks.dir\objects1.rsp
+D:\code\mingw32\bin\i686-w64-mingw32-g++.exe -static -static-libgcc -static-libstdc++ -shared -o ..\bin\JiYuTrainerHooks.dll -Wl,--out-implib,..\lib\libJiYuTrainerHooks.dll.a -Wl,--major-image-version,0,--minor-image-version,0 -Wl,--whole-archive CMakeFiles\JiYuTrainerHooks.dir/objects.a -Wl,--no-whole-archive @CMakeFiles\JiYuTrainerHooks.dir\linkLibs.rsp

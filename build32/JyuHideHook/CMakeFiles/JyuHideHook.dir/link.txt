@@ -1,0 +1,3 @@
+D:\code\cmake\bin\cmake.exe -E rm -f CMakeFiles\JyuHideHook.dir/objects.a
+D:\code\mingw32\bin\ar.exe qc CMakeFiles\JyuHideHook.dir/objects.a @CMakeFiles\JyuHideHook.dir\objects1.rsp
+D:\code\mingw32\bin\i686-w64-mingw32-g++.exe -shared -o ..\bin\JyuHideHook.dll -Wl,--out-implib,..\lib\libJyuHideHook.dll.a -Wl,--major-image-version,0,--minor-image-version,0 -Wl,--whole-archive CMakeFiles\JyuHideHook.dir/objects.a -Wl,--no-whole-archive @CMakeFiles\JyuHideHook.dir\linkLibs.rsp

@@ -1,0 +1,3 @@
+D:\code\cmake\bin\cmake.exe -E rm -f CMakeFiles\JiYuTrainer.dir/objects.a
+D:\code\mingw32\bin\ar.exe qc CMakeFiles\JiYuTrainer.dir/objects.a @CMakeFiles\JiYuTrainer.dir\objects1.rsp
+D:\code\mingw32\bin\i686-w64-mingw32-g++.exe -mwindows -static -static-libgcc -static-libstdc++ -Wl,--whole-archive CMakeFiles\JiYuTrainer.dir/objects.a -Wl,--no-whole-archive -o ..\bin\JiYuTrainer.exe -Wl,--out-implib,..\lib\libJiYuTrainer.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\JiYuTrainer.dir\linkLibs.rsp

@@ -1,0 +1,2 @@
+D:\code\mingw32\bin\ar.exe qc ..\lib\libJiYuTrainerUI.a CMakeFiles/JiYuTrainerUI.dir/AttackWindow.cpp.obj CMakeFiles/JiYuTrainerUI.dir/BugReportWindow.cpp.obj CMakeFiles/JiYuTrainerUI.dir/CommonWindow.cpp.obj CMakeFiles/JiYuTrainerUI.dir/ConfigWindow.cpp.obj CMakeFiles/JiYuTrainerUI.dir/HelpWindow.cpp.obj CMakeFiles/JiYuTrainerUI.dir/JiYuTrainerUI.cpp.obj CMakeFiles/JiYuTrainerUI.dir/MainWindow.cpp.obj CMakeFiles/JiYuTrainerUI.dir/ScanIPWindow.cpp.obj CMakeFiles/JiYuTrainerUI.dir/UpdaterWindow.cpp.obj
+D:\code\mingw32\bin\ranlib.exe ..\lib\libJiYuTrainerUI.a

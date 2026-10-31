@@ -1,0 +1,225 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#ifndef APSTUDIO_INVOKED
+#include "targetver.h"
+#endif
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// ????(?????????) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+
+IDD_DIALOG_ARGEEMENT DIALOGEX 0, 0, 333, 165
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "JiYu Trainer ???????????"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "???????????????",IDYES,143,126,119,14
+    PUSHBUTTON      "??????",IDNO,266,126,53,14
+    LTEXT           "?????????????????????????????????????",IDC_STATIC,11,13,268,10
+    LTEXT           "???????????????????????????????????????????????????????????????????????????????????????????????",IDC_STATIC_RED,11,25,308,49
+    LTEXT           "??????????????????????????????????",IDC_STATIC,11,112,161,8
+    LTEXT           "????????????????????????????????????y???????????????????????\n?????????????????????????????????????????????????????????",IDC_STATIC,13,79,312,20
+    LTEXT           "JiYuTrainer V1.7",IDC_STATIC,14,130,53,8,WS_DISABLED
+END
+
+
+IDD_DIALOG_AVTIP DIALOGEX 0, 0, 281, 86
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "JiYu Trainer ???"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "???",IDOK,224,65,50,14
+    ICON            IDI_WARN,IDC_STATIC,16,15,21,20
+    LTEXT           "Static",IDC_MESSAGE,44,16,205,32
+    CONTROL         "???????",IDC_CHECK_DONOT_SHOW_AGAIN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,65,48,10
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 163
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 55
+    END
+
+    IDD_DIALOG_ARGEEMENT, DIALOG
+    BEGIN
+        RIGHTMARGIN, 311
+    END
+
+    IDD_DIALOG_MD5SHOW, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 302
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 169
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#ifndef APSTUDIO_INVOKED\r\n"
+    "#include ""targetver.h""\r\n"
+    "#endif\r\n"
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// BIN
+//
+
+#ifdef _DEBUG
+
+IDR_DLL_DRIVER          BIN                     "..\\Debug\\JiYuTrainerDriver.sys"
+
+IDR_DLL_HOOKS           BIN                     "..\\Debug\\JiYuTrainerHooks.dll"
+
+IDR_DLL_SCITER          BIN                     "..\\Debug\\sciter.zip"
+
+IDR_EXE_KERNEL_CLEANER  BIN                     "..\\Release\\KernelCallbackCleaner.exe"
+
+IDR_DLL_RTCORE           BIN                     "..\\Release\\RTCore64.sys"
+
+IDR_DLL_HIDE_HOOK        BIN                     "..\\Release\\JyuHideHook.dll"
+
+#else
+
+IDR_DLL_DRIVER          BIN                     "..\\Release\\JiYuTrainerDriver.sys"
+
+IDR_DLL_HOOKS           BIN                     "..\\Release\\JiYuTrainerHooks.dll"
+
+IDR_DLL_SCITER          BIN                     "..\\Release\\sciter.zip"
+
+IDR_EXE_KERNEL_CLEANER  BIN                     "..\\Release\\KernelCallbackCleaner.exe"
+
+IDR_DLL_RTCORE           BIN                     "..\\Release\\RTCore64.sys"
+
+IDR_DLL_HIDE_HOOK        BIN                     "..\\Release\\JyuHideHook.dll"
+
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,8,3,1
+ PRODUCTVERSION 1,8,3,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080404b0"
+        BEGIN
+            VALUE "CompanyName", "?????"
+            VALUE "FileDescription", "JiYu Trainer Pocket Edition"
+            VALUE "FileVersion", "1.8.3.1"
+            VALUE "InternalName", "JiYuTrai.exe"
+            VALUE "LegalCopyright", "Copyright ? 2026 ?????, All rights reserved."
+            VALUE "OriginalFilename", "JiYuTrai.exe"
+            VALUE "ProductName", "JiYu Trainer"
+            VALUE "ProductVersion", "1.8.3.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x804, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+
+IDI_APP_MAIN                 ICON                    "..\\JiYuTrainerLogo.ico"
+
+IDI_WARN                ICON                    "..\\JiYuTrainerWarn.ico"
+
+#endif    // ????(?????????) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
+#include "JiYuTrainerUI.rc"

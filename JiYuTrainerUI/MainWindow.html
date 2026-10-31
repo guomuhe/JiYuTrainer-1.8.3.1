@@ -1,0 +1,1375 @@
+<html>
+<head>
+    <title>JiYu Trainer Main Window</title>
+    <style>
+        html {
+            background: transparent;
+            overflow: hidden;
+        }
+
+        /* Window anim*/
+
+        body {
+            font-family: "Microsoft YaHei", Tahoma, sans-serif;
+            transition: transform linear 150ms, opacity linear 150ms;
+            opacity: .3;
+        }
+        body.shown {
+            opacity: 1;
+        }
+        body.minize {
+            transition: opacity linear 100ms;
+            opacity: .3;
+        }
+
+        .window-shadow {
+            position: relative;
+        }
+        .window-box {
+            display: block;
+            position: relative;
+            margin: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 13px rgba(0,0,0,.5);
+            background-color: #fff;
+            height: 480px;
+        }
+
+        /* Window title*/
+        .window-title-area {
+            position: relative;
+            height: 36px;
+        }
+        .window-title-area h5 {
+            display: inline-block;
+            position: absolute;
+            top: 3px;
+            left: 50px;
+            width: 300px;
+            color: #fff;
+        }
+        .window-title-area img {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
+
+        /* Window close*/
+        .title-close {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            position: absolute;
+            top: 12px;
+            right: 15px;
+            background: url(res:btn-close.png) no-repeat 0px 0;
+            border-radius: 50%;
+        }
+        .title-close.black {
+            background-position: -96px 0;
+        }
+        .title-close:hover {
+             background-position: -32px 0;
+        }
+        .title-min {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            position: absolute;
+            top: 12px;
+            right: 50px;
+            background: url(res:btn-min.png) no-repeat 0px 0;
+            border-radius: 50%;
+        }
+        .title-min:hover {
+             background-position: -32px 0;
+        }
+
+        .window-area {
+            display: block;
+            position: relative;
+            width: 100%;
+            height: 390px;
+            border-radius: 10px;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .state-ok .window-area {
+            background: linear-gradient(to bottom, rgb(46,164,240) 0%,rgb(46,140,240) 100%);
+        }
+        .state-work .window-area {
+            background: linear-gradient(to bottom, rgb(0, 204, 5) 0%,rgb(40, 140, 0) 100%);
+        }
+        .state-notwork .window-area {
+            background: linear-gradient(to bottom, rgb(108, 117, 125) 0%,rgb(77, 88, 99) 100%);
+        }
+        .state-warn .window-area {
+            background: linear-gradient(to bottom, rgba(255, 153, 0, 0.77) 0%,rgb(228, 126, 0) 100%);
+        }
+
+
+        .window-footer-area {
+            position: absolute;
+            width: 374px;
+            height: 180px;
+            bottom: 55px;
+            left: 0;
+            right: 0;
+            background-repeat: no-repeat;
+            background-size: 374px 180px;
+            background-image: url(res:footer-mask.png);
+        }
+        /*
+        .state-ok .window-footer-area {
+            background-image: url(res:footer-xok.png);
+        }
+        .state-warn .window-footer-area {
+            background-image: url(res:footer-xwarn.png);
+        }
+        .state-notwork .window-footer-area {
+            background-image: url(res:footer-xnotwork.png);
+        }
+        .state-work .window-footer-area {
+            background-image: url(res:footer-xwork.png);
+        }
+        */
+
+
+        /* Window extend area */
+        .window-extend-area {
+            display: none;
+            z-index: 10;
+            position: absolute;
+            bottom: 0;
+            left: -5px;
+            right: -5px;
+            top: 60px;
+            bottom: 100px;
+            transform: scale(0.8);
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px 0px rgba(0,0,0,.3);
+            background-color: #fff;
+            opacity: 0;
+            transition: transform linear 100ms, opacity linear 100ms;
+            padding: 3px 10px;
+        }
+        .window-extend-area.shown {
+            display: block;
+             transform: scale(1);
+            opacity: 1;
+        }
+        .window-extend-area.hidden{
+             display: block;
+             transform: scale(0.8) ;
+             opacity: 0;
+        }
+        .window-extend-area.upper {
+           z-index: 15;
+        }
+        .window-extend-area-mask {
+            display: none;
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-color: #000;
+            transition: opacity linear 150ms;
+            z-index: 1;
+        }
+        .window-extend-area-mask.upper {
+            z-index: 11;
+        }
+        .window-extend-area.shown.with-mask + .window-extend-area-mask {
+            display: block;
+            opacity: 0.3;
+            border-radius: 10px;
+        }
+
+        #common_message {
+            padding: 10px 20px;
+            top: 150px;
+            bottom: 150px;
+        }
+        #update_message {
+
+            bottom: 70px;
+            top: 60px;
+            left: 15px;
+            right: 15px;
+            padding: 10px 20px;
+            background-image: url(res:update_bg.png);
+            background-repeat: no-repeat;
+            background-position: 0 -44px;
+        }
+        #update_message_text {
+            margin-top: 30px;
+            padding:  20px;
+        }
+        #update_message_text ol, #update_message_text ul {
+            margin: 0;
+            padding: 0;
+        }
+        #isnew_message {
+            bottom: 121px;
+            top: 100px;
+            left: 15px;
+            right: 15px;
+            padding: 10px 20px;
+            background-image: url(res:update_bg.png);
+            background-repeat: no-repeat;
+            background-position: left -30px;
+        }
+        #isnew_message_text {
+            margin-top: 55px;
+            padding: 20px;
+        }
+
+        /* Window base content */
+        .main-state {
+            text-align: center;
+        }
+        .main-state .inner {
+            display: inline-block;
+            width: 190px;
+            height: 190px;
+            margin-top: 15px;
+            margin-left: 5px;
+            background-image: url(res:bg-main-state.png);
+        }
+        .main-state .inner img {
+            display: inline-block;
+            width: 94px;
+            height: 94px;
+            background: url(res:states.png) no-repeat 0px 0;
+            margin-top: 48px;
+        }
+        .main-state .inner img.state-ctl-no-lock {
+            background-position: -0px 0;
+        }        
+        .main-state .inner img.state-ctl-unlock {
+            background-position: -94px 0;
+        }
+        .main-state .inner img.state-failed {
+            background-position: -188px 0;
+        }
+        .main-state .inner img.state-manual-stop {
+            background-position: -282px 0;
+        }
+        .main-state .inner img.state-not-found {
+            background-position: -376px 0;
+        }
+        .main-state .inner img.state-unknow-problem {
+            background-position: -470px 0;
+        }
+        .main-state .inner img.state-not-run {
+            background-position: -564px 0;
+        }
+
+        .main-state .status-text {
+            display: inline-block;
+            margin-top: 10px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .main-state .status-text2 {
+            display: inline-block;
+            margin-top: 3px;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .btn-footers {
+            display: inline-block;
+            position: relative;
+            width: 40px;
+            height: 40px;
+            background-image: url(res:btn-footers.png);
+            margin-left: 20px;
+        }
+        .btn-footers-area{
+            display: block;
+            position: absolute;
+            text-align: center;
+            bottom: -20px;
+            left: 0;
+            right: 0;
+        }
+        .btn-footers-area .version {
+            display: inline-block;
+            position: absolute;
+            text-align: center;
+            bottom: -28px;
+            left: 26px;
+        }
+        .btn-footers.btn-kill {
+            background-position: -80px 0;
+        }
+        .btn-footers.btn-kill:hover {
+            background-position: -120px 0;
+         }
+        .btn-footers.btn-restart {
+            background-position: 0px 0;
+         }
+        .btn-footers.btn-restart:hover {
+            background-position: -40px 0;
+         }
+        .btn-footers.btn-top {
+            background-position: -240px 0;
+            margin-left: 20px;
+        }
+        .btn-footers.btn-top:hover,  .btn-footers.btn-top.topmost {
+            background-position: -280px 0;
+         }
+        .btn-footers.btn-debug {
+            background-position: -160px 0;
+         }
+        .btn-footers.btn-debug:hover {
+            background-position: -200px 0;
+         }
+        .btn-footers.btn-about {
+            background-position: -320px 0;
+         }
+        .btn-footers.btn-about:hover {
+            background-position: -360px 0;
+         }
+        .btn-footers.btn-power {
+            background-position: -400px 0;
+         }
+        .btn-footers.btn-power:hover {
+            background-position: -440px 0;
+         }
+        .btn-footers.protect-stat {
+            margin-left: 0px;
+        }
+        .btn-footers.protect-stat.not-protected {
+            background-position: -480px 0;
+        }
+        .btn-footers.protect-stat.protected {
+            background-position: -520px 0;
+        }
+        .btn-footers.btn-anticapture {
+            background-position: -720px 0;
+        }
+        .btn-footers.btn-anticapture:hover {
+            background-position: -760px 0;
+         }
+        .btn-footers.protect-stat.no-danger {
+            background-position: -560px 0;
+        }
+
+         /* Tooltip */
+        .window-tooltips-top {
+            display: block;
+            position: absolute;
+            top: 0;
+            height: 2px;
+            left: 0;
+            right: 0;
+            z-index: 20;
+            overflow: visible;
+        }
+        .window-tooltips-bottom {
+            display: block;
+            position: absolute;
+            bottom: 0;
+            height: 2px;
+            left: 0;
+            right: 0;
+            z-index: 20;
+            overflow: visible;
+        }
+
+        .tooltip {
+            display: inline-block;
+            background-color: #000;
+            border-radius: 4px;
+            padding: 4px 8px;
+            color: #fff;
+            text-align: center;
+            z-index: 20;
+            opacity: 0;
+            transform: scale(0);
+            transition: transform linear 100ms, opacity linear 100ms;
+            position: absolute;
+        }
+        .tooltip.shown {
+           transform: scale(1);
+           display: inline-block;
+           opacity: 1;
+        }
+
+        /*Tab*/
+        .window-tab-con {
+            text-align: center;
+            height: 40px;
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -23px;
+        }
+        .window-tab {
+            display: inline-block;
+            position: relative;
+            padding: 0;
+            width: auto;
+            word-break: keep-all;
+            background-color: rgba(0, 0, 0, .6);
+            border-radius: 20px;
+        }
+        .window-page {
+            display: none;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        .window-page.active {
+             display: block;  
+        }
+        .btn-tab {
+            display: inline-block;
+            padding: 5px 15px;
+            background-color: transparent;
+            color: #fff;
+            margin: 0;
+            border-radius: 20px;
+            text-decoration: none;
+        }
+        .btn-tab.active{
+            background-color: #fff;
+            box-shadow: 0 0 7px rgba(0,0,0,.5);
+            color: #000;
+        }
+        .btn-tab:hover {
+            color: #50c6ff
+        }
+        .btn-tab.active:hover {
+            color: #000;
+         }
+
+        /* Button*/
+        .btn-common {
+            display: inline-block;
+            border-radius: 20px;
+            padding: 3px 12px;
+            background-color: #cdcdcd;
+            color: #fff;
+            text-decoration: none;
+        }
+        .btn-common:hover{
+            background-color: #3ca0d0;
+            color: #fff;
+        }
+        .btn-about {
+            position: absolute;
+            bottom: 36px;
+            left: 5px;
+        }
+        .btn-quit {
+            border-top-right-radius: 0px;
+            border-bottom-right-radius: 0px;
+        }
+        .btn-quit:hover {
+            color: #fff;
+        }
+
+        .btn-dager {
+            background-color: #ff9b40;
+        }
+        .btn-dager:hover {
+            background-color: #ff7a00;
+        }
+        .btn-primary {
+            background-color: #0072ff;
+        }
+        .btn-primary:hover {
+            background-color: #3ca0d0;
+        }
+        .btn-secondary {
+            background-color: #676767;
+        }
+        .btn-secondary:hover {
+            background-color: #91adc4;
+        }
+
+        .btn-close-extend-area i {
+            display: inline-block;
+            width: 13px;
+            padding-left: 9px;
+            padding-top: 5px;
+            background-image: url(res:btn-close.png);
+            background-repeat: no-repeat;
+            background-position: -1px -2px;
+        }
+        .btn-close-extend-area {
+            position: absolute;
+            top: -10px;
+            right: 15px;
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            background-color: #ff6440;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            text-decoration: none;
+        }
+        .btn-close-extend-area:hover {
+            background-color: #ff3100;
+        }
+
+        .op-item {
+            height: 46px;
+            cursor: pointer;
+            display: block;
+            margin-top: 5px;
+            padding: 3px;
+            text-decoration: none;
+        }
+        .op-item span {
+            display: inline-block;
+            vertical-align: middle;
+            font-size: 18px;
+            color: #101;
+            margin-left: 10px;
+        }
+        .op-item img {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background-image: url(res:btn-footers.png);
+            vertical-align: middle;
+        }
+        .op-item img.shutdown {
+            background-position: -640px 0;
+        }
+        .op-item img.reboot {
+            background-position: -680px 0;
+        }
+        .op-item img.quit {
+            background-position: -600px 0;
+        }
+        .op-item:hover {
+            border-radius: 10px;
+            box-shadow: 0 0 7px rgba(0,0,0,.5);
+        }
+
+        .new-ver{
+            margin-top: 10px;
+            text-align: center;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        .new-ver .ver {
+            font-size: 16px;
+        }
+        .new-ver .text {
+            display: block;
+            font-size: 25px;
+            font-weight: bold;
+        }
+
+        .cfg-link {
+            display: inline-block;
+            min-width: 132px;
+            margin-top: 4px;
+            position: relative;
+        }
+        .cfg-link-left {
+            flex-shrink: 0;
+        }
+        .cfg-link-right {
+            flex-shrink: 0;
+        }
+        .cfg-link::after {
+            display: inline-block;
+            position: absolute;
+            left: -29px;
+            top: -3px;
+            width: 26px;
+            height: 26px;
+            background: url(res:link-icons.png) no-repeat 0px 0;
+        }
+
+        #link_unload_netfilter::after {
+            background-position: -78px 0px;
+        }
+        #link_locate_jiyu_position::after {
+            background-position: -52px 0px;
+        }
+        #link_read_jiyu_password2::after {
+            background-position: -26px 0px;
+        }
+        #link_more_settings::after {
+            background: url(res:link-icons.png) no-repeat 0px 0;
+        }
+        #link_attact::after {
+            background-position: -104px 0px;
+        }
+
+        #link_close_extend_area {
+            z-index: 20;
+        }
+        #commands_help_area {
+            display: block;
+            width: 100%;
+            height: 300px;
+            overflow: scroll;
+            font-size: 12px;
+            vertical-scrollbar: my-v-scrollbar;
+            horizontal-scrollbar: my-h-scrollbar;
+        }
+
+        /*Status area*/
+        #status_area {
+            width: 100%;
+            height: 180px;
+            overflow: scroll;
+            font-size: 12px;
+            font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+            vertical-scrollbar: my-v-scrollbar;
+            horizontal-scrollbar: my-h-scrollbar;
+            overflow: scroll;
+            padding-bottom: 5px;
+            padding-right: 5px;
+        }
+        #status_area div {
+            width: auto;
+            white-space: pre;
+        }
+
+        /* Utitles*/
+        .m-0 {
+            margin: 0px;
+        }
+        .ml-0 {
+            margin-left: 0;
+        }
+        .mt-0 {
+            margin-top: 0;
+        }
+        .mt-1 {
+            margin-top: 3px;
+        }
+        .mt-2 {
+            margin-top: 5px;
+        }
+        .mt-3 {
+            margin-top: 8px;
+        }
+        .ml-1 {
+            margin-left: 3px;
+        }
+        .ml-2 {
+            margin-left: 5px;
+        }
+        .ml-3 {
+            margin-left: 8px;
+        }
+        .p-0 {
+            padding: 0px;
+        }
+        .p-3{
+            padding: 10px;
+        }
+
+        .text-black {
+            color: #000 !important;
+        }
+        .text-info {
+            color: #17a2b8 !important;
+        }
+        .text-danger {
+            color: #dc3545 !important;
+        }
+        .text-success {
+            color: #28a745 !important;
+        }
+        .text-warning {
+            color: #d58300;
+        }
+        .text-secondary {
+            color: #6c757d !important;
+        }
+        .text-primary {
+            color: #007bff !important;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+        .text-right {
+            text-align: right;
+        }
+
+        label {
+            display: inline-block;
+            margin-bottom: .5rem;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+
+        #page_about {
+            text-align:center;
+        }
+        .alert {
+            display: block;
+            position: relative;
+            padding: 12px 20px;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: 6px;
+        }
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            /*border-color: #c3e6cb;*/
+        }
+
+        /* Check box */
+        .form-check {
+            position: relative;
+            display: inline-block;
+        }
+        .form-item {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .cfg-link-left {
+            flex-shrink: 0;
+        }
+        .cfg-link-right {
+            flex-shrink: 0;
+        }
+        .form-check label  {
+            vertical-align: middle;
+            height: 24px;
+            line-height: 24px;
+            margin-bottom: 0;
+        }
+        .form-check input[type=checkbox] {
+            background: url(res:checkboxs.png) no-repeat 0px 0;
+            background-position: 0 0px;
+            width: 26px;
+            height: 26px;
+        }
+        .form-check input[type=checkbox]:hover {  background-position:  -26px 0;   }
+        .form-check input[type=checkbox]:checked {  background-position:  -52px 0;  }
+        .form-check input[type=checkbox]:checked:hover { background-position:  -78px 0;  }
+        .form-check input[type=checkbox]:disabled { background-position:  -104px 0;   }
+        .form-check input[type=checkbox]:checked:disabled { background-position:  -130px 0;   }
+        
+        /* Tooltip */
+        * popup[role="tooltip"] {
+            display: inline-block;
+            word-break: break-word;
+            background: #000;
+            color: #fff;
+            border-radius: 6px;
+            padding: 8px;
+            max-width: 300px;
+        }
+
+        @set my-v-scrollbar {
+            .prev {
+                display: none;
+            }
+            .next {
+                display: none;
+            }
+            .base,
+            .next-page,
+            .prev-page {
+                background: white;
+                border-left: none;
+            }
+            .slider {
+                background: #ddd;
+                border-radius: 6px;
+                border: 2px solid #fff;
+            }
+            .slider:hover {
+                background: #999;
+            }
+            .slider:active {
+                background: #888;
+            }
+            .base:disabled {
+                background: none;
+            }
+            .base {
+                width: 10dip;
+            }
+            /* explicit declaration of its width */
+            .corner {
+                background: transparent;
+            }
+        }
+        @set my-h-scrollbar {
+            .prev {
+                display: none;
+            }
+            .next {
+                display: none;
+            }
+            .base,
+            .next-page,
+            .prev-page {
+                background: white;
+                border-left: none;
+            }
+            .slider {
+                background: #ddd;
+                border-radius: 6px;
+                border: 2px solid #fff;
+            }
+            .slider:hover {
+                background: #999;
+            }
+            .slider:active {
+                background: #888;
+            }
+            .base:disabled {
+                background: none;
+            }
+            .base {
+                height: 10dip;
+            }
+            /* explicit declaration of its width */
+            .corner {
+                background: transparent;
+            }
+        }
+    </style>
+</head>
+<body class="window-shadow">
+
+    <div class="window-box" id="wnd">
+
+        <!--&#x7A97;&#x53E3;-->
+        <div class="window-area">
+            <!--&#x6807;&#x9898;&#x680F;-->
+            <div class="window-title-area" id="title-area">
+                <img src="res:icon-main-small.png" id="title-icon" />
+                <h5 id="title">JiYu Trainer Main Window</h5>
+                <a class="title-min" id="btn_min" href="#" title="&#x6700;&#x5C0F;&#x5316;"></a>
+                <a class="title-close" id="btn_close" href="#" title="&#x5173;&#x95ED;"></a>
+            </div>
+            <!--&#x4E3B;&#x72B6;&#x6001;&#x56FE;&#x6807;-->
+            <div class="main-state">
+                <div class="inner">
+                    <img class="state-not-found" id="status_icon" />
+                </div>
+                <br /><span class="status-text" id="status_text_main">&#x6B63;&#x5728;&#x521D;&#x59CB;&#x5316;</span>
+                <br /><span class="status-text2" id="status_text_more">...</span>
+            </div>
+        </div>
+        <!--&#x5DE5;&#x5177;&#x63D0;&#x793A;&#x5F39;&#x51FA;&#x5C42;-->
+        <div class="window-tooltips-top">
+            <div class="tooltip" id="tooltip_fast" style="top: 100px; left: 30px; right: 30px"></div>
+        </div>
+        <div class="window-tooltips-bottom">
+            <div class="tooltip tooltip-vesion" style="bottom: 90px; left: 75px; width: 150px">&#x5F53;&#x524D;&#x7248;&#x672C; &#xFF1A;V1.8.3.1<br /><small>&#x70B9;&#x51FB;&#x67E5;&#x770B;&#x5E2E;&#x52A9;</small></div>
+            <div class="tooltip tooltip-jiyu-pid" style="bottom: 86px; left: 30px; width: 300px;padding-top:8px;padding-bottom:8px">StudentMain.exe PID : <span id="status_jiyu_pid">&#x672A;&#x77E5;</span><br /><small>&#x70B9;&#x51FB;&#x6740;&#x6B7B;&#x6781;&#x57DF;&#x7535;&#x5B50;&#x6559;&#x5BA4;</small></div>
+            <div class="tooltip tooltip-jiyu-restart" style="bottom: 86px; left: 30px; width: 300px;padding-top:8px;padding-bottom:8px"><h4 class="m-0">&#x6781;&#x57DF;&#x4F4D;&#x7F6E;</h4><span id="status_jiyu_path" style="color: #cecece">&#x672A;&#x627E;&#x5230;&#x6781;&#x57DF;&#x7535;&#x5B50;&#x6559;&#x5BA4;</span></div>
+            <div class="tooltip tooltip-topmost" id="tooltip_top" style="bottom: 83px; left: 83px; width: 70px">&#x672C;&#x7A97;&#x53E3;&#x7F6E;&#x9876;</div>
+            <div class="tooltip tooltip-sets" style="bottom: 83px; left: 203px; width: 80px">&#x63A7;&#x5236;&#x53F0;&#x548C;&#x8BBE;&#x7F6E;</div>
+            <div class="tooltip tooltip-power" style="bottom: 83px; left: 281px; width: 55px">&#x7535;&#x6E90;&#x63A7;&#x5236;</div>
+            <div class="tooltip tooltip-protect-stat" style="bottom: 83px; left: 30px; width: 300px;" id="status_protect">&#x60A8;&#x672A;&#x53D7;&#x5230;&#x6781;&#x57DF;&#x7535;&#x5B50;&#x6559;&#x5BA4;&#x7684;&#x63A7;&#x5236;</div>
+            <div class="tooltip tooltip-anticapture" style="bottom: 83px; left: 130px; width: 60px">&#x9632;&#x5C4F;&#x5F55;</div>
+        </div>
+        <!--&#x5E95;&#x680F;-->
+        <div class="window-footer-area">
+            <!--&#x5173;&#x4E8E;&#x6309;&#x94AE;-->
+            <a class="btn-footers btn-about" id="btn_about" href="#"></a>
+            <!--&#x5E95;&#x680F;&#x533A;&#x57DF;-->
+            <div class="btn-footers-area">
+                <a class="btn-footers protect-stat no-danger" id="btn_protect_stat"></a>
+                <a class="btn-footers btn-top" id="btn_top" href="#"></a>
+                <a class="btn-footers btn-kill" id="btn_kill" href="#" style="display:none;"></a>
+                <a class="btn-footers btn-restart" id="btn_restart" href="#"></a>
+                <a class="btn-footers btn-anticapture" id="btn_anticapture" href="#"></a>
+                <a class="btn-footers btn-debug" id="btn_debug" href="#"></a>
+                <a class="btn-footers btn-power" id="btn_power" href="#"></a>
+                <span class="version"><img src="res:version-text.png" /></span>
+            </div>
+        </div>
+        <!--&#x6269;&#x5C55;&#x533A;&#x57DF;-->
+        <div class="window-extend-area" id="extend_area">
+            <!--Tab &#x6309;&#x94AE;-->
+            <div class="window-tab-con">
+                <div class="window-tab">
+                    <a class="btn-tab active" href="#" id="btn_tab_setting" style="width: 30px">&#x8BBE;&#x7F6E;</a><a class="btn-tab" href="#" id="btn_tab_debug" style="width: 30px;">&#x8C03;&#x8BD5;</a><a class="btn-tab" href="#" id="btn_tab_about" style="width: 30px;">&#x5173;&#x4E8E;</a>
+                </div>
+            </div>
+            <!--Tab &#x5173;&#x95ED;-->
+            <a href="#" id="link_close_extend_area" class="btn-close-extend-area"><i>&nbsp;</i></a>
+            <!--Tab &#x533A;&#x57DF;-->
+            <div class="window-page active" id="page_setting">
+                <h4 class="mb-0">&#x7A0B;&#x5E8F;&#x914D;&#x7F6E;</h4>
+                <div class="from-group">
+
+                    <div style="width: 180px;" class="form-check" title=" &#x662F;&#x5426;&#x76D1;&#x63A7;&#x6781;&#x57DF;&#x8FD0;&#x884C;&#x8FDB;&#x7A0B;&#xFF0C;&#x901A;&#x5E38;&#x6559;&#x5E08;&#x53EF;&#x4EE5;&#x901A;&#x8FC7;&#x6781;&#x57DF;&#x8FDC;&#x7A0B;&#x6267;&#x884C;&#x5E94;&#x7528;&#x7A0B;&#x5E8F;&#xFF0C;&#x5982;&#x679C;&#x4F60;&#x52FE;&#x9009;&#x6B64;&#x9879;&#x5219;&#x4F1A;&#x76D1;&#x63A7;&#x6781;&#x57DF;&#x8FD0;&#x884C;&#x8FDB;&#x7A0B;&#xFF0C;&#x4F60;&#x53EF;&#x4EE5;&#x9009;&#x62E9;&#x5141;&#x8BB8;&#x6216;&#x963B;&#x6B62;&#x6559;&#x5E08;&#x5728;&#x6B64;&#x7535;&#x8111;&#x4E0A;&#x8FD0;&#x884C;&#x7A0B;&#x5E8F;">
+                        <input type="checkbox" id="check_allow_op" checked="checked" />
+                        <label for="check_allow_op">&#x76D1;&#x63A7;&#x6781;&#x57DF;&#x8FD0;&#x884C;&#x8FDB;&#x7A0B;</label>
+                    </div>
+                    <div class="form-check" style="width: 150px;" title="&#x52FE;&#x9009;&#x6B64;&#x9009;&#x9879;&#x540E;&#x6781;&#x57DF;&#x8FD0;&#x884C;&#x7A0B;&#x5E8F;&#x6216;CMD&#x5C06;&#x4E0D;&#x4F1A;&#x63D0;&#x9192;&#x60A8;&#x800C;&#x662F;&#x76F4;&#x63A5;&#x62D2;&#x7EDD;&#xFF08;&#x7528;&#x6781;&#x57DF;&#x6253;&#x5F00;&#x6587;&#x4EF6;&#x4E5F;&#x4E0D;&#x80FD;&#xFF09;">
+                        <input type="checkbox" id="check_band_op">
+                        <label for="check_band_op">&#x7981;&#x6B62;&#x6781;&#x57DF;&#x8FD0;&#x884C;&#x8FDB;&#x7A0B;</label>
+                    </div>
+
+                    <div class="form-check" style="width: 180px;" title="&#x5982;&#x679C;&#x4F60;&#x9700;&#x8981;&#x5C06;&#x5C4F;&#x5E55;&#x5E7F;&#x64AD;&#x7A97;&#x53E3;&#x7F6E;&#x9876;&#xFF0C;&#x8BF7;&#x52FE;&#x9009;&#x6B64;&#x9009;&#x9879;&#xFF0C;&#x7136;&#x540E;&#x5728;&#x5C4F;&#x5E55;&#x5E7F;&#x64AD;&#x4E2D;&#x9009;&#x62E9;&#x7F6E;&#x9876;&#x3002;&#x672C;&#x8F6F;&#x4EF6;&#x9ED8;&#x8BA4;&#x4E0D;&#x5141;&#x8BB8;&#x5C4F;&#x5E55;&#x5E7F;&#x64AD;&#x7A97;&#x53E3;&#x7F6E;&#x9876;">
+                        <input type="checkbox" id="check_allow_top" />
+                        <label for="check_allow_top">&#x5141;&#x8BB8;&#x5C4F;&#x5E55;&#x5E7F;&#x64AD;&#x7A97;&#x53E3;&#x7F6E;&#x9876;</label>
+                    </div>
+                    <div style="width: 140px;" class="form-check" title="&#x662F;&#x5426;&#x5141;&#x8BB8;&#x6559;&#x5E08;&#x901A;&#x8FC7;&#x6781;&#x57DF;&#x7ED3;&#x675F;&#x60A8;&#x7535;&#x8111;&#x4E0A;&#x7684;&#x8FDB;&#x7A0B;&#xFF0C;&#x9ED8;&#x8BA4;&#x4E0D;&#x5141;&#x8BB8;&#x3002;">
+                        <input type="checkbox" id="check_probit_terminate_process" checked="checked" />
+                        <label for="check_probit_terminate_process">&#x7981;&#x6B62;&#x6781;&#x57DF;&#x7ED3;&#x675F;&#x8FDB;&#x7A0B;</label>
+                    </div>
+
+                    <div class="form-item" style="display:flex; justify-content:space-between;">
+                        <div class="form-check" style="width: 180px;" title="&#x53D6;&#x6D88;&#x52FE;&#x9009;&#x6B64;&#x9009;&#x9879;&#x540E;&#x6559;&#x5E08;&#x5C06;&#x65E0;&#x6CD5;&#x901A;&#x8FC7;&#x6781;&#x57DF;&#x67E5;&#x770B;&#x4F60;&#x7684;&#x7535;&#x8111;&#x5C4F;&#x5E55;&#x3002;&#x9ED8;&#x8BA4;&#x5141;&#x8BB8;&#x6B64;&#x9009;&#x9879;">
+                            <input type="checkbox" id="check_allow_monitor" />
+                            <label for="check_allow_monitor">&#x5141;&#x8BB8;&#x6559;&#x5E08;&#x76D1;&#x89C6;&#x4F60;&#x7684;&#x7535;&#x8111;</label>
+                        </div>
+                        <div class="form-check" style="width: 160px;" title="&#x542F;&#x52A8;&#x540E;&#x4E0D;&#x5728;&#x7CFB;&#x7EDF;&#x6258;&#x76D8;&#x663E;&#x793A;JiYuTrainer&#x56FE;&#x6807;">
+                            <input type="checkbox" id="check_hide_tray_icon">
+                            <label for="check_hide_tray_icon">&#x9690;&#x85CF;&#x6258;&#x76D8;&#x56FE;&#x6807;</label>
+                        </div>
+                    </div>
+
+                    <div class="form-check" style="width: 140px;" title="&#x662F;&#x5426;&#x5141;&#x8BB8;&#x6559;&#x5E08;&#x901A;&#x8FC7;&#x6781;&#x57DF;&#x5173;&#x95ED;&#x60A8;&#x7535;&#x8111;&#x4E0A;&#x7684;&#x7A97;&#x53E3;&#xFF0C;&#x9ED8;&#x8BA4;&#x4E0D;&#x5141;&#x8BB8;&#x3002; ">
+                        <input type="checkbox" id="check_probit_close_window" />
+                        <label for="check_probit_close_window">&#x7981;&#x6B62;&#x6781;&#x57DF;&#x5173;&#x95ED;&#x7A97;&#x53E3;</label>
+                    </div>
+                    <div class="form-check" style="width: 180px;" title="&#x52FE;&#x9009;&#x6B64;&#x9009;&#x9879;&#x540E;&#x6559;&#x5E08;&#x53EF;&#x901A;&#x8FC7;&#x6781;&#x57DF;&#x63A7;&#x5236;&#x60A8;&#x7684;&#x7535;&#x8111;&#x3002;&#x9ED8;&#x8BA4;&#x4E0D;&#x5141;&#x8BB8;&#x6B64;&#x9009;&#x9879;">
+                        <input type="checkbox" id="check_allow_control" />
+                        <label for="check_allow_control">&#x5141;&#x8BB8;&#x6559;&#x5E08;&#x63A7;&#x5236;&#x4F60;&#x7684;&#x7535;&#x8111;</label>
+                    </div>
+
+                    <div class="form-item" style="margin-top: 4px; text-align: center;">
+                        <a href="#" id="btn_noshutdown" class="btn-common">&#x8131;&#x79BB;&#x8FDC;&#x7A0B;&#x5173;&#x673A;</a>&nbsp;
+                        <a href="#" id="btn_unblock" class="btn-common">&#x4E00;&#x952E;&#x89E3;&#x9664;&#x9650;&#x5236;</a>
+                    </div>
+                    <div class="form-item" style="margin-top: 4px; text-align: center;">
+                        <a href="#" id="btn_input_unlock" class="btn-common">&#x952E;&#x9F20;&#x9F20;&#x6807;&#x89E3;&#x9501;</a>&nbsp;
+                        <a href="#" id="btn_kill_mythware" class="btn-common">&#x6740;&#x6389;&#x6781;&#x57DF;&#x8FDB;&#x7A0B;</a>
+                    </div>
+                    <div class="form-item" style="margin-top: 2px;">
+                        <a href="#" id="link_exit_black" class="cfg-link cfg-link-left text-info" style="margin-left: 30px" title="&#x9000;&#x51FA;&#x6781;&#x57DF;&#x9ED1;&#x5C4F;&#x72B6;&#x6001;&#xFF0C;&#x5177;&#x6709;&#x56DB;&#x7EA7;&#x9012;&#x8FDB;&#x7B56;&#x7565;">&#x9000;&#x51FA;&#x9ED1;&#x5C4F;</a>
+                        <a href="#" id="link_broadcast_windowed" class="cfg-link cfg-link-right text-info" title="&#x5C06;&#x6781;&#x57DF;&#x5E7F;&#x64AD;&#x7A97;&#x53E3;&#x5207;&#x6362;&#x4E3A;&#x7A97;&#x53E3;&#x5316;&#x663E;&#x793A;">&#x5E7F;&#x64AD;&#x7A97;&#x53E3;&#x5316;</a>
+                    </div>
+                    <div class="form-item" style="margin-top: 2px;">
+                        <a href="#" id="link_unload_netfilter" class="cfg-link cfg-link-left text-info" style="margin-left: 30px" title="&#x672C;&#x529F;&#x80FD;&#x53EF;&#x4EE5;&#x5378;&#x8F7D;&#x6781;&#x57DF;&#x7684;&#x7F51;&#x7EDC;&#x8FC7;&#x6EE4;&#x9A71;&#x52A8;&#xFF0C;&#x6765;&#x9632;&#x6B62;&#x6559;&#x5E08;&#x901A;&#x8FC7;&#x6781;&#x57DF;&#x9650;&#x5236;&#x60A8;&#x7535;&#x8111;&#x7684;&#x4E0A;&#x7F51;&#x3002;&#x672C;&#x529F;&#x80FD;&#x5F00;&#x673A;&#x540E;&#x5378;&#x8F7D;&#x4E00;&#x6B21;&#x5373;&#x53EF;&#x3002;">&#x89E3;&#x9664;&#x7F51;&#x7EDC;&#x63A7;&#x5236;</a>
+                        <a href="#" id="link_usb_unblock" class="cfg-link cfg-link-right text-info" title="&#x89E3;&#x9664;&#x6781;&#x57DF;&#x5BF9;USB&#x8BBE;&#x5907;&#x7684;&#x9650;&#x5236;">&#x89E3;&#x9664;USB&#x9650;&#x5236;</a>
+                    </div>
+                    <div class="form-item" style="margin-top: 2px;">
+                        <a href="#" id="link_attact" class="cfg-link cfg-link-left text-info" style="margin-left: 30px" title="&#x6570;&#x636E;&#x5305;(udp)&#x91CD;&#x653E;&#x653B;&#x51FB;&#x529F;&#x80FD;&#xFF0C;&#x8BE5;&#x529F;&#x80FD;&#x539F;&#x7406;&#x7531;ht0Ruial&#x63D0;&#x4F9B;">&#x91CD;&#x653E;&#x653B;&#x51FB;(by ht0Ruial)</a>
+                    </div>
+                    <div class="form-item" style="margin-top: 2px;">
+                        <a href="#" id="link_read_jiyu_password2" class="cfg-link cfg-link-left text-info" style="margin-left: 30px" title="&#x672C;&#x8F6F;&#x4EF6;&#x53EF;&#x5C1D;&#x8BD5;&#x7834;&#x89E3;&#x6781;&#x57DF;&#x7535;&#x5B50;&#x6559;&#x5BA4;&#x7684;&#x5378;&#x8F7D;&#x548C;&#x89E3;&#x9501;&#x5BC6;&#x7801;">&#x7834;&#x89E3;&#x6781;&#x57DF;&#x7684;&#x5BC6;&#x7801;</a>
+                    </div>
+                    <div class="form-item" style="margin-top: 2px;">
+                        <a href="#" id="link_more_settings" class="cfg-link cfg-link-left text-info" style="margin-left: 30px">&#x8F6F;&#x4EF6;&#x9AD8;&#x7EA7;&#x914D;&#x7F6E;</a>
+                        <a href="#" id="link_locate_jiyu_position" class="cfg-link cfg-link-right text-info" title="&#x5982;&#x679C;&#x672C;&#x8F6F;&#x4EF6;&#x5E76;&#x6CA1;&#x6709;&#x627E;&#x5230;&#x6781;&#x57DF;&#x7535;&#x5B50;&#x6559;&#x5BA4;&#x6216;&#x8005;&#x662F;&#x5BFB;&#x627E;&#x7684;&#x8DEF;&#x5F84;&#x4E0D;&#x6B63;&#x786E;&#xFF0C;&#x60A8;&#x53EF;&#x4EE5;&#x624B;&#x52A8;&#x9009;&#x62E9;">&#x9009;&#x62E9;&#x6781;&#x57DF;&#x4E3B;&#x8FDB;&#x7A0B;&#x4F4D;&#x7F6E;</a>
+                    </div>
+
+                    <!-- === 窗口操作 / 离线功能：链接已迁移至 调试 页的调试命令；复选框已合并到上方 程序配置 === -->
+
+                </div>
+                <div class="text-center" style="margin-top:14px;">
+                    <a href="#" id="link_save_setting" class="btn-common">&#x4FDD;&#x5B58;&#x8BBE;&#x7F6E;</a>&nbsp;
+                    <a href="#" id="link_setto_default" class="btn-common">&#x6062;&#x590D;&#x9ED8;&#x8BA4;</a>&nbsp;
+                </div>
+            </div>
+            <div class="window-page" id="page_debug">
+                <h4 class="mb-0">&#x7A0B;&#x5E8F;&#x8F93;&#x51FA;&#x548C;&#x8C03;&#x8BD5;&#x547D;&#x4EE4;</h4>
+                <div id="status_area">
+                </div>
+                <div style="margin-top:5px;">
+                    <input id="input_cmd" style="width:200px;" />&nbsp;
+                    <a href="#" class="btn-common" id="link_runcmd">&#x6267;&#x884C;</a>
+                    <a href="#" class="btn-common" id="link_more_cmd" title="&#x6D4B;&#x8BD5;&#x547D;&#x4EE4;">&#x25B2;</a>
+                </div>
+            </div>
+            <div class="window-page" id="page_about">
+                <div style="position: absolute; display: block; left: 0px; top: -20px; right: 0;">
+                    <img src="res:logo128.png" style="width:100px; height:100px;border-radius: 30px; box-shadow: 0 0 13px rgba(0,0,0,.5); background-color: #fff;" />
+                </div>
+                <div style="margin-top: 70px">
+                    <img src="res:logo-text.png" style="width:230px; height:auto" />
+                </div>
+                <div style="text-align:center">
+                    v1.8.3.1
+                    &copy; 2026 &#x90ED;&#x6C90;&#x548C;
+                </div>
+                <br />
+                <a href="#" id="link_help" class="link">&#x8F6F;&#x4EF6;&#x5E2E;&#x52A9;</a>&nbsp;|&nbsp;<a href="#" id="link_checkupdate" class="link">&#x68C0;&#x67E5;&#x66F4;&#x65B0;</a>&nbsp;|&nbsp;<a href="#" id="link_uninstall" class="link" style="color: rgb(228, 126, 0);font-size: 12px;" title="&#x4ECE;&#x6B64;&#x8BA1;&#x7B97;&#x673A;&#x4E0A;&#x5378;&#x8F7D; JiYu Trainer ">&#x5378;&#x8F7D;&#x8F6F;&#x4EF6;</a><br />
+                <br />
+                <div class="alert alert-success">
+                    &#x4F60;&#x559C;&#x6B22; JiYu Trainer &#x5417;&#xFF1F;&#x5982;&#x679C;&#x4F60;&#x559C;&#x6B22;&#xFF0C;&#x4E0D;&#x59A8;&#x5411;&#x4F60;&#x7684;&#x597D;&#x53CB;&#x63A8;&#x8350;&#x4E00;&#x4E0B;&#x8FD9;&#x4E2A;&#x8F6F;&#x4EF6;&#x5427;&#xFF01;
+                </div>
+            </div>
+        </div>
+        <!--&#x6269;&#x5C55;&#x533A;&#x57DF;&#x7ED3;&#x675F;-->
+        <!--&#x666E;&#x901A;&#x63D0;&#x793A;&#x6846;-->
+        <div class="window-extend-area with-mask upper" id="common_message">
+            <a href="#" class="title-close black" id="common_message_close"></a>
+            <h3 id="common_message_title">&#x6D4B;&#x8BD5;&#x6D88;&#x606F;</h3>
+            <p id="common_message_text">&#x6D4B;&#x8BD5;&#x6D88;&#x606F;&#x6587;&#x5B57;&#xFF0C;&#x5C1D;&#x8BD5; DEBUG</p>
+            <div class="text-right" style="position: absolute;bottom: 0; left: 15px; right: 15px; height :45px;">
+                <a href="#" class="btn-common btn-primary" id="common_message_close2">&#x6211;&#x77E5;&#x9053;&#x4E86;</a>
+            </div>
+        </div>
+        <div class="window-extend-area-mask upper"></div>
+        <!--&#x66F4;&#x591A;&#x547D;&#x4EE4;&#x63D0;&#x793A;&#x6846;-->
+        <div class="window-extend-area with-mask upper" id="cmds_message" style="bottom: 90px; top :30px; left: -15px; right: -15px; padding: 10px 20px; ">
+            <a href="#" class="title-close black" id="cmds_message_close"></a>
+            <h3>&#x8C03;&#x8BD5;&#x547D;&#x4EE4;</h3>
+            <p class="text-danger">&#x4EE5;&#x4E0B;&#x547D;&#x4EE4;&#x4EC5;&#x4F9B;&#x8C03;&#x8BD5;&#x4F7F;&#x7528;&#xFF0C;&#x90E8;&#x5206;&#x53EF;&#x80FD;&#x5B58;&#x5728;&#x5371;&#x9669;</p>
+            <div id="commands_help_area">
+                <span>killst &#x6740;&#x6B7B;&#x6781;&#x57DF;&#x7535;&#x5B50;&#x6559;&#x5BA4;</span><br />
+                <span>rerunst &#x91CD;&#x65B0;&#x8FD0;&#x884C;&#x6781;&#x57DF;&#x7535;&#x5B50;&#x6559;&#x5BA4;</span><br />
+                <span>kill [pid] &#x7ED3;&#x675F;&#x6307;&#x5B9A; pid &#x7684;&#x8FDB;&#x7A0B;</span><br />
+                <span>findps [processName] &#x67E5;&#x627E;&#x6307;&#x5B9A;&#x540D;&#x79F0;&#x7684;&#x8FDB;&#x7A0B; pid</span><br />
+                <span>ss &#x67E5;&#x901A;&#x77E5;&#x6781;&#x57DF;&#x75C5;&#x6BD2;&#x7AEF;&#x5F3A;&#x5236;&#x7206;&#x7834;</span><br />
+                <span>sss &#x7ACB;&#x5373;&#x5173;&#x673A;</span><br />
+                <span>ssr &#x7ACB;&#x5373;&#x91CD;&#x542F;</span><br />
+                <span>sst [second] &#x5B9A;&#x65F6;&#x5728;&#x6307;&#x5B9A; second &#x79D2;&#x540E;&#x5173;&#x673A;</span><br />
+                <span>ssss &#x5185;&#x6838;&#x5173;&#x673A;</span><br />
+                <span>sssr &#x5185;&#x6838;&#x91CD;&#x542F;</span><br />
+                <span>ckend &#x5206;&#x79BB;&#x672C;&#x7A0B;&#x5E8F;&#x4E0E;&#x6781;&#x57DF;</span><br />
+                <span>whereisi &#x663E;&#x793A;&#x5F53;&#x524D;&#x7A0B;&#x5E8F;&#x76EE;&#x5F55;</span><br />
+                <span>version &#x663E;&#x793A;&#x5F53;&#x524D;&#x7A0B;&#x5E8F;&#x7248;&#x672C;</span><br />
+                <span>testupdate &#x6D4B;&#x8BD5;&#x5347;&#x7EA7;&#x6A21;&#x5757;</span><br />
+                <span>crash &#x6D4B;&#x8BD5;&#x5D29;&#x6E83;</span><br />
+                <span>exit &#x5F3A;&#x5236;&#x9000;&#x51FA;&#x7A0B;&#x5E8F;</span><br />
+                <a href="#" id="link_hide">hide &#x9690;&#x85CF;&#x4E3B;&#x754C;&#x9762;</a><br />
+                <a href="#" id="link_read_jiyu_password" class="text-info">jypasswd &#x7834;&#x89E3;&#x6781;&#x57DF;&#x5BC6;&#x7801;</a><br />
+                <span>uj &#x5F3A;&#x5236;&#x4ECE;&#x6781;&#x57DF;&#x5378;&#x8F7D;&#x5DF2;&#x6CE8;&#x5165;&#x7684;&#x75C5;&#x6BD2;</span><br />
+                <span>inspector &#x542F;&#x52A8; UI &#x8C03;&#x8BD5;&#x5668;</span><br />
+                <span>fuljydrv &#x5F3A;&#x5236;&#x5378;&#x8F7D;&#x6781;&#x57DF;&#x7684;&#x4FDD;&#x62A4;&#x9A71;&#x52A8; <span class="text-danger">(&#x6709;&#x84DD;&#x5C4F;&#x98CE;&#x9669; &#x614E;&#x7528;)</span></span><br />
+                <span>unloaddrv &#x5378;&#x8F7D;&#x672C;&#x8F6F;&#x4EF6;&#x7684;&#x9A71;&#x52A8;</span><br />
+                <span class="text-secondary" style="margin-top:6px; display:block;">&#x25B6; &#x9650;&#x5236;&#x89E3;&#x9664;</span><br />
+                <a href="#" id="link_stop_tdff" class="text-info">stop_tdff &#x89E3;&#x9664;U&#x76D8;/&#x8F6F;&#x4EF6;&#x9650;&#x5236;</a><br />
+                <a href="#" id="link_stop_tdnf" class="text-info">stop_tdnf &#x89E3;&#x9664;&#x7F51;&#x7AD9;&#x9650;&#x5236;</a><br />
+                <a href="#" id="link_clear_gp" class="text-info">clear_gp &#x89E3;&#x9664;&#x5DE5;&#x5177;&#x9650;&#x5236;</a><br />
+                <a href="#" id="link_clear_ifeo" class="text-info">clear_ifeo &#x89E3;&#x9664;&#x6620;&#x50CF;&#x52AB;&#x6301;</a><br />
+                <a href="#" id="link_restart_exp" class="text-info">restart_exp &#x91CD;&#x542F;&#x8D44;&#x6E90;&#x7BA1;&#x7406;&#x5668;</a><br />
+                <a href="#" id="link_unlock_antikill" class="text-info">unlock_antikill &#x89E3;&#x9664;&#x9632;&#x6740;&#x94A9;&#x5B50;</a><br />
+                <span class="text-secondary" style="margin-top:6px; display:block;">&#x25B6; &#x8FDB;&#x7A0B;&#x64CD;&#x4F5C;</span><br />
+                <a href="#" id="link_suspend_jy" class="text-info">suspend_jy &#x6302;&#x8D77;&#x6781;&#x57DF;</a><br />
+                <a href="#" id="link_resume_jy" class="text-info">resume_jy &#x6062;&#x590D;&#x6781;&#x57DF;</a><br />
+                <a href="#" id="link_term_thread" class="text-info">term_thread &#x6309;&#x7EBF;&#x7A0B;&#x6740;&#x6781;&#x57DF;</a><br />
+                <a href="#" id="link_term_ntsd" class="text-info">term_ntsd &#x7528;ntsd&#x6740;&#x6781;&#x57DF;</a><br />
+                <span class="text-secondary" style="margin-top:6px; display:block;">&#x25B6; &#x7A97;&#x53E3;&#x64CD;&#x4F5C;</span><br />
+                <a href="#" id="link_top_focus" class="text-info">top_focus &#x7F6E;&#x9876;/&#x53D6;&#x6D88;&#x7126;&#x70B9;&#x7A97;&#x53E3;</a><br />
+                <a href="#" id="link_hide_focus" class="text-info">hide_focus &#x9690;&#x85CF;/&#x663E;&#x793A;&#x7126;&#x70B9;&#x7A97;&#x53E3;</a><br />
+                <a href="#" id="link_kill_focus" class="text-info">kill_focus &#x6740;&#x7126;&#x70B9;&#x8FDB;&#x7A0B;</a><br />
+            </div>
+
+        </div>
+        <div class="window-extend-area-mask upper"></div>
+        <!--&#x521D;&#x6B21;&#x63D0;&#x793A;&#x6846;-->
+        <div class="window-extend-area with-mask upper" id="hello_message">
+            <a href="#" id="link_close_hello_message" class="btn-close-extend-area"><i>&nbsp;</i></a>
+
+        </div>
+        <div class="window-extend-area-mask upper"></div>
+        <!--&#x7535;&#x6E90;&#x63D0;&#x793A;&#x6846;-->
+        <div class="window-extend-area with-mask upper" id="power_message" style="bottom: 130px; top :105px; left: -10px; right: -10px; padding: 10px 20px; ">
+            <a href="#" id="link_close_power_message" class="btn-close-extend-area"><i>&nbsp;</i></a>
+            <h3>&#x9009;&#x62E9;&#x8981;&#x6267;&#x884C;&#x7684;&#x64CD;&#x4F5C;</h3>
+            <a class="op-item" id="link_shutdown" href="#">
+                <img class="shutdown" />
+                <span>&#x5173;&#x95ED;&#x8BA1;&#x7B97;&#x673A;</span>
+            </a>
+            <a class="op-item" id="link_reboot" href="#">
+                <img class="reboot" />
+                <span>&#x91CD;&#x542F;&#x8BA1;&#x7B97;&#x673A;</span>
+            </a>
+            <a class="op-item" id="link_exit" href="#">
+                <img class="quit" />
+                <span>&#x9000;&#x51FA;&#x672C;&#x8F6F;&#x4EF6;</span>
+            </a>
+        </div>
+        <div class="window-extend-area-mask upper"></div>
+        <!--&#x66F4;&#x65B0;&#x63D0;&#x793A;&#x6846;-->
+        <div class="window-extend-area with-mask upper" id="update_message">
+            <div class="new-ver">
+                <span class="text">&#x53D1;&#x73B0;&#x8F6F;&#x4EF6;&#x65B0;&#x7248;&#x672C;</span>
+                <span class="ver"><span id="update_message_newver"></span> &#x66F4;&#x65B0;&#x5185;&#x5BB9;</span>
+            </div>
+            <p id="update_message_text">
+            </p>
+            <p style="position: absolute;bottom: 60px; left: 15px; right: 15px; height :28px;text-align:center; font-size: 12px;color:rgb(108, 117, 125)">&#x66F4;&#x65B0;&#x5230;&#x6700;&#x65B0;&#x7248;&#x672C;&#xFF0C;&#x53EF;&#x4EE5;&#x83B7;&#x5F97;&#x66F4;&#x7A33;&#x5B9A;&#x7684;&#x4F7F;&#x7528;&#x4F53;&#x9A8C;&#xFF01;<br />&#x66F4;&#x65B0;&#x8FC7;&#x7A0B;&#x4E2D;&#x4F1A;&#x6682;&#x65F6;&#x5173;&#x95ED;&#x6781;&#x57DF;</p>
+            <div class="text-right" style="position: absolute;bottom: 0; left: 15px; right: 15px; height :45px;text-align:center;">
+                <a href="#" class="btn-common btn-primary" id="update_message_update">&#x7ACB;&#x5373;&#x66F4;&#x65B0;!</a>
+                <a href="#" class="btn-common ml-2" id="update_message_close">&#x4E0B;&#x6B21;&#x518D;&#x8BF4;</a>
+            </div>
+        </div>
+        <div class="window-extend-area-mask upper"></div>
+        <!--&#x66F4;&#x65B0;&#x6700;&#x65B0;&#x63D0;&#x793A;&#x6846;-->
+        <div class="window-extend-area with-mask upper" id="isnew_message">
+            <div class="new-ver">
+                <span class="text">&#x68C0;&#x6D4B;&#x66F4;&#x65B0;</span>
+                <span class="ver" id="isnew_message_title">&#x4F60;&#x7684; JiYuTrainer &#x662F;&#x6700;&#x65B0;&#x7684;&#x7248;&#x672C;&#xFF01;</span>
+            </div>
+            <p id="isnew_message_text">
+            </p>
+            <div class="text-right" style="position: absolute;bottom: 0; left: 15px; right: 15px; height :45px;text-align:center;">
+                <a href="#" class="btn-common btn-primary" id="isnew_message_close">&#x5173;&#x95ED;</a>
+            </div>
+        </div>
+        <div class="window-extend-area-mask upper"></div>
+        <!--&#x9000;&#x51FA;&#x63D0;&#x793A;&#x6846;-->
+        <div class="window-extend-area with-mask upper" id="exit_message" style="bottom: 135px; top :135px; left: -10px; right: -10px; padding: 10px 20px;">
+            <a href="#" class="btn-close-extend-area" id="exit_message_close"><i>&nbsp;</i></a>
+            <h3>&#x6781;&#x57DF;&#x6B63;&#x5728;&#x8FD0;&#x884C;&#xFF0C;&#x60A8;&#x662F;&#x5426;&#x8FD8;&#x8981;&#x9000;&#x51FA;&#xFF1F;</h3>
+            <p>
+                &#x5F53;&#x524D;&#x6B63;&#x5728;&#x63A7;&#x5236;&#x6781;&#x57DF;&#xFF0C;&#x9000;&#x51FA;&#x8F6F;&#x4EF6;&#x4F1A;&#x975E;&#x5E38;&#x4E0D;&#x5B89;&#x5168;&#x3002;
+                <br />&#x4F60;&#x53EF;&#x4EE5;&#x9009;&#x62E9;&#x5F3A;&#x5236;&#x5206;&#x79BB;&#x6781;&#x57DF;&#xFF0C;&#x4F46;&#x4F1A;&#x5BFC;&#x81F4;&#x6781;&#x57DF;&#x8131;&#x79BB;&#x63A7;&#x5236;(&#x4E0D;&#x63A8;&#x8350;)&#xFF1B;&#x4E5F;&#x53EF;&#x4EE5;&#x9009;&#x62E9;&#x9000;&#x51FA;&#x672C;&#x8F6F;&#x4EF6;&#xFF0C;&#x5E76;&#x6740;&#x6B7B;&#x6781;&#x57DF;&#x3002;
+            </p>
+            <div class="text-right" style="position: absolute;bottom: 0; left: 0px; right: 15px; height :45px;">
+                <a href="#" class="btn-common btn-secondary" id="exit_message_kill_and_exit">&#x6740;&#x6B7B;&#x6781;&#x57DF;&#x9000;&#x51FA;</a>
+                <a href="#" class="btn-common" id="exit_message_end_ctl_and_exit">&#x5206;&#x79BB;&#x6781;&#x57DF;&#x9000;&#x51FA;(&#x4E0D;&#x63A8;&#x8350;)</a>
+                <a href="#" class="btn-common btn-primary" id="exit_message_close2">&#x53D6;&#x6D88;</a>
+            </div>
+        </div>
+        <div class="window-extend-area-mask upper"></div>
+    </div>
+    <script type="text/tiscript">
+
+        const body = $(body);
+        const extend_area = $(#extend_area);
+        const common_message = $(#common_message);
+
+        //Button events
+        $(#btn_close).onClick = function() {
+            closeWindow();
+        }
+        $(#btn_min).onClick = function()
+        {
+            body.onAnimationEnd = function(){
+                 view.state = View.WINDOW_MINIMIZED;
+                 if(body.attributes.hasClass("minize"))
+                     body.attributes.removeClass("minize");
+            }
+            body.attributes.addClass("minize");
+        }
+        $(#btn_debug).onClick = function()
+        {
+            if(extend_area.attributes.hasClass("shown")) {
+                extend_area.attributes.removeClass("shown");
+                extend_area.attributes.addClass("hidden");
+                this.timer(200ms, function() {
+                     extend_area.attributes.removeClass("hidden");
+                });
+            }
+            else extend_area.attributes.addClass("shown");
+        }
+
+        $(#link_close_extend_area).onClick = function(){
+            if(extend_area.attributes.hasClass("shown")) {
+                extend_area.attributes.removeClass("shown");
+                extend_area.attributes.addClass("hidden");
+                this.timer(200ms, function() {
+                     extend_area.attributes.removeClass("hidden");
+                });
+            }
+        }
+        $(#link_more_cmd).onClick = function (){ $(#cmds_message).attributes.addClass("shown");  }
+        $(#link_close_power_message).onClick = function (){ common_close_extend_area($(#power_message));  }
+        $(#link_close_hello_message).onClick = function (){ common_close_extend_area($(#hello_message));  }
+        function close_cmds_tip(){common_close_extend_area($(#cmds_message));}
+
+        function common_close_extend_area(area){
+            if(area.attributes.hasClass("shown")) {
+                area.attributes.removeClass("shown");
+                area.attributes.addClass("hidden");
+                body.timer(200ms, function() {
+                     area.attributes.removeClass("hidden");
+                });
+            }
+        }
+        $(#common_message_close).onClick = function (){ common_close_extend_area(common_message); }
+        $(#common_message_close2).onClick = function (){ common_close_extend_area(common_message); }
+        $(#update_message_close).onClick =  function (){ common_close_extend_area($(#update_message)); }
+        $(#update_message_update).onClick =  function (){ common_close_extend_area($(#update_message)); }
+        $(#exit_message_close).onClick =  function (){ common_close_extend_area($(#exit_message)); }
+        $(#exit_message_close2).onClick =  function (){ common_close_extend_area($(#exit_message)); }
+        $(#cmds_message_close).onClick =  function (){ common_close_extend_area($(#cmds_message)); }
+        $(#isnew_message_close).onClick =  function (){ common_close_extend_area($(#isnew_message)); }
+
+        //Tooltips
+        $(#btn_kill).on("mouseenter", function () { $(.tooltip.tooltip-jiyu-pid).attributes.addClass("shown"); });
+        $(#btn_kill).on("mouseleave", function () { $(.tooltip.tooltip-jiyu-pid).attributes.removeClass("shown"); });
+        $(#btn_restart).on("mouseenter", function () { $(.tooltip.tooltip-jiyu-restart).attributes.addClass("shown"); });
+        $(#btn_restart).on("mouseleave", function () { $(.tooltip.tooltip-jiyu-restart).attributes.removeClass("shown"); });
+        $(#btn_about).on("mouseenter", function () { $(.tooltip.tooltip-vesion).attributes.addClass("shown"); });
+        $(#btn_about).on("mouseleave", function () { $(.tooltip.tooltip-vesion).attributes.removeClass("shown"); });
+        $(#btn_top).on("mouseenter", function () { $(.tooltip.tooltip-topmost).attributes.addClass("shown"); });
+        $(#btn_top).on("mouseleave", function () { $(.tooltip.tooltip-topmost).attributes.removeClass("shown"); });
+        $(#btn_debug).on("mouseenter", function () { $(.tooltip.tooltip-sets).attributes.addClass("shown"); });
+        $(#btn_debug).on("mouseleave", function () { $(.tooltip.tooltip-sets).attributes.removeClass("shown"); });
+        $(#btn_protect_stat).on("mouseenter", function () { $(.tooltip.tooltip-protect-stat).attributes.addClass("shown"); });
+        $(#btn_protect_stat).on("mouseleave", function () { $(.tooltip.tooltip-protect-stat).attributes.removeClass("shown"); });
+        $(#btn_power).on("mouseenter", function () { $(.tooltip.tooltip-power).attributes.addClass("shown"); });
+        $(#btn_power).on("mouseleave", function () { $(.tooltip.tooltip-power).attributes.removeClass("shown"); });
+        $(#btn_anticapture).on("mouseenter", function () { $(.tooltip.tooltip-anticapture).attributes.addClass("shown"); });
+        $(#btn_anticapture).on("mouseleave", function () { $(.tooltip.tooltip-anticapture).attributes.removeClass("shown"); });
+
+        $(#tooltip_fast).onClick = function() { $(#tooltip_fast).attributes.removeClass("shown"); }
+        $(#btn_power).onClick = function() { $(#power_message).attributes.addClass("shown"); }
+        $(#link_exit).onClick = function() { $(#power_message).attributes.removeClass("shown"); }
+        $(#link_reboot).onClick =  $(#link_exit).onClick;
+        $(#link_shutdown).onClick =  $(#link_exit).onClick;
+
+        //Tabs
+        $(#btn_tab_setting).onClick = function() { selectTab(this, $(#page_setting)); }
+        $(#btn_tab_debug).onClick = function() { selectTab(this, $(#page_debug)); }
+        $(#btn_tab_about).onClick = function() { selectTab(this, $(#page_about)); }
+
+        function showExitMessage() {
+            $(#exit_message).attributes.addClass("shown");
+        }
+        function selectTab(btn, targetTab){
+            $(.btn-tab.active).attributes.removeClass("active");
+            $(.window-page.active).attributes.removeClass("active");
+            btn.attributes.addClass("active");
+            targetTab.attributes.addClass("active");
+        }
+
+        function runInspector()
+        {
+            if(!view.inspectorIsPresent()) // native function, defined in sciter.cpp
+                System.exec( System.home("inspector.exe") );
+            // give it a time to start ...
+             $(body).timer(500, function() {
+                if( var connectToInspector = view.connectToInspector )
+                    connectToInspector($(html));
+            });
+        }
+        function showFastTip(){
+            const tooltip_fast = $(#tooltip_fast);
+            tooltip_fast.attributes.addClass("shown");
+            body.timer(4s, function() { tooltip_fast.attributes.removeClass("shown") });
+        }
+        function closeFastTip(){
+            $(#tooltip_fast).attributes.removeClass("shown")
+        }
+        function showWindow(){
+            body.onAnimationEnd = function(){ };
+            if(!body.attributes.hasClass("shown"))
+                body.attributes.addClass("shown");
+        }
+
+        const exit_message = $(#exit_message);
+        const hello_message = $(#hello_message);
+        const power_message = $(#power_message);
+        const update_message = $(#update_message);
+
+        function closeWindow(){
+            if(extend_area.attributes.hasClass("shown")) extend_area.attributes.removeClass("shown");
+            else  if(update_message.attributes.hasClass("shown")) return;
+            else  if(common_message.attributes.hasClass("shown")) common_message.attributes.removeClass("shown");
+            else  if(power_message.attributes.hasClass("shown")) power_message.attributes.removeClass("shown");
+            else  if(exit_message.attributes.hasClass("shown"))  exit_message.attributes.removeClass("shown");
+            else  if(hello_message.attributes.hasClass("shown")) hello_message.attributes.removeClass("shown");
+            else {
+                body.onAnimationEnd = function(){
+                    view.exitClick();
+                };
+                body.attributes.removeClass("shown");
+            }
+        }
+        function checkGfx()
+        {
+            if(!view.backend)
+                view.msgbox(#alert,"Failed to initialize layered window!");
+             return ["Unknown","GDI+","D2D/WARP","D2D/DX"][view.backend];
+        }
+        function self.ready()
+        {
+            body.timer(1,:: this.attributes.addClass("shown"));
+            view.docunmentComplete();
+        }
+
+        //Drag and drop
+        function movable() // install movable window handler
+        {
+          var xoff,yoff;
+          var dragging = false;
+          var body = $(body);
+
+          function doDrag()
+          {
+            while( dragging )
+              view.doEvent();
+          }
+
+          function onMouseDown(evt)
+          {
+            if( evt.target !== body && evt.target !== $(#title-area) && evt.target !== $(#title-icon) && evt.target !== $(#title))
+              return false;
+            xoff = evt.x;
+            yoff = evt.y;
+            dragging = true;
+            view.root.capture(true);
+            doDrag();
+            return true;
+          }
+
+          function onMouseMove(evt)
+          {
+            if( dragging )
+            {
+              view.move( evt.xScreen - xoff, evt.yScreen - yoff, true); // true - x,y are coordinates of the client area on the screen
+              return true;
+            }
+            return false;
+          }
+
+          function stopDrag()
+          {
+            if(dragging)
+            {
+              dragging = false;
+              view.root.capture(false);
+              return true;
+            }
+            return false;
+          }
+
+          function onMouseUp(evt) { return stopDrag(); }
+          function onKeyDown(evt) { if(evt.keyCode == Event.VK_ESCAPE ) return stopDrag(); }
+
+          // hookup event handlers:
+          view.root.subscribe(onMouseDown, Event.MOUSE, Event.MOUSE_DOWN );
+          view.root.subscribe(onMouseUp, Event.MOUSE, Event.MOUSE_UP );
+          view.root.subscribe(onMouseMove, Event.MOUSE, Event.MOUSE_MOVE );
+          view.root.subscribe(onKeyDown, Event.KEY, Event.KEY_DOWN );
+          return false;
+        }
+
+        movable();
+
+        self.on("complete", function() {
+          stdout.println("got complete");
+          //$(button#test).text = "complete";
+        });
+
+    </script>
+
+</body>
+</html>
