@@ -1,148 +1,216 @@
-<p align="center">
-  <a href="#">
-    <img alt="JiYu Trainer" src="https://imengyu.top/assets/images/jy/JiYuTrainerLogo256.png" width="128">
-  </a>
-</p>
-<p align="center">
-  <img alt="JiYu Trainer Title" src="https://imengyu.top/assets/images/jy/JiYuTrainerTitle.png">
-</p>
+# JiYuTrainer
+
 <p align="center">不再被极域电子教室控制</p>
 
 <p align="center">
-  <a href="#"><img src="https://img.shields.io/badge/language-C++-blue.svg"></a>
-  <a href="https://github.com/imengyu/JiYuTrainer/releases"><img src="https://img.shields.io/badge/version-1.7-greeb.svg"></a>
-  <a href="https://github.com/imengyu/JiYuTrainer/blob/master/LICENSE"><img src="https://img.shields.io/badge/liscence-MIT-orange.svg"></a>
+  <img alt="language" src="https://img.shields.io/badge/language-C%2B%2B%2017-blue.svg">
+  <img alt="build" src="https://img.shields.io/badge/build-CMake%20%2B%20MinGW-brightgreen.svg">
+  <img alt="license" src="https://img.shields.io/badge/license-MIT-orange.svg">
 </p>
 
 ---
 
-简介
----
+## 简介
 
-本软件研发目的就是为了对抗极域电子教室，如果您的学校机房使用极域电子教室来控制学生电脑的话，本软件很可能会帮到你。
+极域电子教室是许多学校机房使用的教学管理软件。它的全屏广播、黑屏安静、远程控制等功能，在某些场景下会让被控制者感到困扰。
 
-> 讲师讲课无聊啰嗦缓慢？想自己试试操作，却被该死的全屏广播控制，什么都不能干？拔掉网线后虽然自由了但是又看不到老师的演示了？
+本软件可以在**不破坏极域正常运行**的前提下，将全屏广播自动转为窗口模式，让你在老师演示的同时仍然可以自由操作电脑；同时提供反监视、防控制、自动关闭黑屏安静等功能。
 
-如果你被以上问题困扰，本软件可能是您非常想要的。
-
-这是一个可以使 **极域电子教室全屏广播失效** 的软件，也就是说，在被老师全屏广播时，会将其自动调整为窗口模式，你不仅可以自由操作电脑，也还可以看老师的演示，自由+学习两不误，这不是很爽的事情吗？其还可以防止被老师控制（有点狠），以及自动关闭 “**黑屏安静**” 这种东西；由于本软件是将全屏调整为窗口，因此老师并不会发现你断线或是进行了非法操作。
-
-如果你喜欢这个软件，不妨向你的好友推荐一下吧！
-
-如果你觉得这个软件不错，不妨加个小星星⭐吧，你的喜欢是对我最大的支持！
-
-功能
----
-* 在不影响极域正常运行的情况下将 全屏的广播 转为 窗口广播 模式，您不仅可自己操作，也可看老师讲解课程。
-* 内置强杀、启停极域 StudentMain.exe 进程功能，无需依赖其他软件。
-* 内置破解极域解锁卸载密码功能，支持新版极域。
-* 反监视功能，经测试，开启反监视，教师端就无法监视您所用的电脑。
-* 防控制功能，防止教师通过极域控制您所用的电脑。
-* 监控极域远程执行命令，您可以自由选择是否允许教师端远程执行的命令。
-* 通过极域电子教室对同学的电脑远程发送信息或远程执行命令。
-
-下载
----
-
-* [下载软件最新版已编译版本](https://raw.githubusercontent.com/imengyu/JiYuTrainer/master/Release/JiYuTrainer.exe) 
-
-提示：**由于本软件会对极域电子教室进行必要的操作（远程注入、替换模块），某些杀毒软件可能会报毒，您可能需要关闭杀毒软件或添加白名单**。
+由于是把全屏转为窗口，服务端看到的仍然是正常连接状态，不会暴露。
 
 ---
 
-![截图](https://imengyu.top/assets/images/jy/ScreenShots.png)
+## 功能一览
 
-操作方法
+| 功能 | 说明 |
+|------|------|
+| 全屏广播转窗口 | 被全屏广播时自动切为窗口模式，自由操作 + 看演示两不误 |
+| 反监视 | 服务端无法远程查看你的屏幕 |
+| 防控制 | 禁止服务端远程操作你的键鼠 |
+| 自动关闭黑屏安静 | 检测到黑屏指令时自动恢复显示 |
+| 强杀/启停极域进程 | 内置 StudentMain.exe 进程管理 |
+| 破解卸载密码 | 支持新版极域的解锁卸载密码 |
+| 远程命令拦截 | 监控极域远程执行命令，可选择放行或阻止 |
+| UDP 攻击 | 可向指定 IP 发送 UDP 包（攻击窗口） |
+| 防屏录 | 选择指定窗口禁止截屏/录屏（基于 `SetWindowDisplayAffinity`） |
+| 圆形悬浮窗 | 始终置顶的小型控制入口，可拖可点 |
+| 内核回调清除 | 内嵌 BYOVD 漏洞驱动，清除极域注册的内核回调 |
+
 ---
 
-本软件专为小白设计，默认情况下，您不需要修改任何参数，直接运行exe，并最小化即可，软件会自动进行操作。
+## 发布包结构
 
-> 附加说明：本软件不依赖任何运行库，您只需复制一个 **JiYuTrainer.exe** 至目标电脑即可运行，本软件已将需要的DLL打包，它会自动进行安装。 
+编译后的 Release 目录包含以下文件：
 
-[完整帮助文档](https://raw.githubusercontent.com/imengyu/JiYuTrainer/master/帮助.png)
-
----
-
-一些提示
----
-
-**Q: 教师端限制了U盘，要怎么把 JiYuTrainer 复制到电脑上运行？** <br/>
-**A: 你可以先卸载掉极域的驱动再插入U盘。具体操作方法如下：** <br/>
-
-1. 先以管理员身份运行cmd：
-![CMD](https://imengyu.top/assets/images/jy/sc0.png)
-2. 输入以下命令卸载TDFileFilter驱动：
 ```
-sc stop TDFileFilter 
-sc delete TDFileFilter 
+Release/
+├── JiYuTrainer.exe          # 主程序（内嵌所有资源和依赖）
+├── sciter.dll               # UI 渲染引擎
+├── JiYuTrainerHooks.dll     # Hook 模块
+└── JiYuTrainerDriver.sys   # 内核驱动
 ```
-![sc](https://imengyu.top/assets/images/jy/sc1.png)
 
-然后再插入U盘，就没有限制了，可以直接运行JiYuTrainer。
+> 其他依赖（curl、mhook、MemoryModule、XZip 等）全部静态链接进 `JiYuTrainer.exe`，不再单独发布。
 
-**Q: 教师端限制了网络，要怎么办？** <br/>
-**A: JiYuTrainer 可以自动卸载网络驱动，这可能有效，如果该方法无效，<br/>可尝试下载PCHunter软件，该软件有最强力的方法删除驱动（也可用它来杀死任何进程）**<br/>
-
-1. 如图打开PCHunter软件，打开“驱动模块”页面。
-2. 找到极域的网络驱动“TDNetFilter.sys”，并选择卸载驱动。
-3. 稍等一下，刷新网页，此时网络即可正常访问。
-4. 最好你也可顺便把极域的其他进程一并杀死，防止它因为驱动卸载掉还操作而导致系统蓝屏。
-
-![pch](https://imengyu.top/assets/images/jy/pchunter1.png)
-
-#### 已测试极域电子教室版本：
-
-* 2010版 （5.01.64.942 / 5.01 Baseline）
-* 2015豪华版
-* 2016豪华版 （2.07.0.13488 / 2.07 CMPC） 
-
-#### 操作系统版本: 
-
-* 系统版本要求: Win7/Win8/Win8.1/Win10
-
-> 抱歉：因为最近一次做了较大改动，一些功能XP适配不了了，所以此后JiYuTrainer都不再支持WindowXP了，
-如果您要在WindowXP上使用JiYuTrainer，只能使用[旧版](https://raw.githubusercontent.com/imengyu/JiYuTrainer/master/Release/JiYuTrainerOldForWinXP.exe)。
-
-编译以及生成
 ---
 
-| 支持的编译工具：||
-|:-|:-:|
-| [Visual Studio](https://www.visualstudio.com/) 2019 | (推荐) |
-| gcc 4.7+ (需要自己配置环境) | (不推荐) |
+## 编译指南
 
-|如果需要编译驱动模块，您还需要安装:||
-|:-|:-:|
-|[WDK8](https://www.microsoft.com/en-us/download/details.aspx?id=42273) 或以上||
+### 环境要求
 
-使用的第三方库
+- **Windows 10/11**（32 位目标）
+- **CMake 3.16+**
+- **MinGW-w64 GCC 13**（i686，32 位）
+  - 推荐：`D:\code\mingw32\bin\i686-w64-mingw32-g++.exe`
+
+> 项目已不再使用 MSVC `.sln` / `.vcxproj`，全部迁移到 CMake。驱动模块 `JiYuTrainerDriver` 仍需 WDK 编译（可选，使用预编译的 `.sys` 即可）。
+
+### 一键编译
+
+```cmd
+set PATH=D:\code\mingw32\bin;%PATH%
+cd build32
+mingw32-make -j4
+```
+
+产物位置：
+
+```
+build32/
+├── bin/JiYuTrainer.exe
+├── lib/libJiYuTrainerUI.a
+├── lib/libJiYuTrainerHooks.dll.a
+└── ...
+```
+
+### CMake 重新配置
+
+如果需要重新生成构建文件：
+
+```cmd
+set PATH=D:\code\mingw32\bin;%PATH%
+mkdir build32 && cd build32
+cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+mingw32-make -j4
+```
+
+### 关键编译参数
+
+| 参数 | 说明 |
+|------|------|
+| C++ 标准 | C++17 (`-std=gnu++17`) |
+| C 标准 | C11 |
+| 字符集 | Unicode + UTF-8 源码 + UTF-8 运行时 |
+| `.rc` 资源 | GBK 编码（codepage=936），windres 编译 |
+| 预处理器 | `WIN32`, `UNICODE`, `NOMINMAX`, `CINTERFACE` |
+
 ---
 
-*第三方库已经包含在项目中，不需要您自己安装*
+## 项目架构
 
-- [Jiyu_udp_attack](https://github.com/ht0Ruial/Jiyu_udp_attack) (由ht0Ruial大佬提供UDP攻击的原理代码)
-- [curl](https://github.com/curl/curl) (用于自动更新模块)
-- [mhook](https://github.com/martona/mhook) (用于 JiYu HOOKER 模块)
-- [MemoryModule](https://github.com/fancycode/MemoryModule)
-- [XZip-XUnZip](https://github.com/yuanjia1011/XZip-XUnZip)
+```
+JiYuTrainer-master/
+├── CMakeLists.txt                  # 顶层 CMake
+├── JiYuTrainer/                    # 主程序 (EXE)
+│   ├── FloatingWindow.cpp          # 圆形悬浮窗 + 防屏录窗口列表 + PickOverlay
+│   ├── TrainerWorker.cpp           # 核心对抗逻辑（全屏转窗口、反监视等）
+│   ├── DriverLoader.cpp            # 驱动加载器
+│   ├── KernelUtils.cpp             # 内核操作辅助
+│   ├── MythwareExt.cpp             # 极域扩展接口层
+│   ├── JyUdpAttack.cpp             # UDP 攻击实现
+│   ├── inject.cpp                  # 进程注入
+│   ├── window_utils.cpp            # 窗口工具（置顶同步、z-order）
+│   └── ...
+├── JiYuTrainerUI/                  # UI 层 (静态库, Sciter)
+│   ├── MainWindow.cpp              # 主窗口
+│   ├── HelpWindow.cpp              # 帮助窗口
+│   ├── AttackWindow.cpp            # 攻击/扫描 IP 窗口
+│   ├── BugReportWindow.cpp         # Bug 报告
+│   ├── res/                        # PNG/BMP/ICO 资源
+│   └── sciter-sdk/                 # Sciter 引擎（含 libsciter.a）
+├── JiYuTrainerHooks/               # Hook 模块 (DLL)
+│   ├── JiYuTrainerHooks.cpp
+│   ├── disasm-lib/                 # x86 反汇编
+│   └── mhook-lib/                  # inline hook
+├── JyuHideHook/                    # 窗口隐蔽模块 (轻量 DLL)
+├── JiYuTrainerUpdater/             # 自动更新 (静态库, 含 curl)
+├── JiYuTrainerDriver/              # 内核驱动 (WDK 编译, 可选)
+└── Release/                        # 发布产物
+```
 
-其他
+### 构建依赖顺序
+
+```
+JiYuTrainerUpdater  →  JiYuTrainerHooks  →  JyuHideHook  →  JiYuTrainerUI  →  JiYuTrainer
+```
+
 ---
 
-这个项目大致功能目标已经完成了，<br/>
-作者也毕业要工作了，再不会去机房上课了😔，<br/>
-以后可能没有太多时间更新，所以基本除了BUG修复可能不会做大修改了。<br/>
-<br/>
-如果您有其他功能需求，可以fork项目之后自己研究开发。<br/>
-如果你想把自己开发的特殊功能放在JiYuTrainer供大家使用的话，
-你可以把功能开发完成后PullRequest让我把你的代码合并到主分支中。<br/>
-<br/>
-如果你喜欢这个项目，<br/>
-不妨推荐给你的好友吧😉
+## 窗口层级策略
 
-许可
+所有附属窗口通过 Windows **owned window** 机制跟随主窗口：
+
+```
+TOPMOST 层（同层内 z-order）
+┌───────────────────────────────────┐
+│ 圆形悬浮窗 (FloatingWindow)        │ ← 永久 TOPMOST，永远在最上
+│ 悬浮窗 hidden owner                │ ← owned 于主窗口
+│ 主窗口                            │ ← 400ms 刷 TOPMOST
+│ HelpWindow / AttackWindow 等      │ ← owned 于主窗口，跟随置顶降级
+└───────────────────────────────────┘
+```
+
+- 主窗口最小化 → 所有 owned 窗口自动隐藏
+- 主窗口置顶 → 所有 owned 窗口自动置顶（悬浮窗保持最上）
+- 点击窗口 → 被点击的自动到最前
+
 ---
 
-[MIT License](https://github.com/imengyu/JiYuTrainer/blob/master/LICENSE) (free, open source)
+## 第三方依赖
 
+全部包含在项目中，无需额外安装：
 
+| 库 | 用途 |
+|----|------|
+| [Sciter](https://sciter.com/) | UI 渲染引擎（HTML/CSS） |
+| [mhook](https://github.com/martona/mhook) | inline hook |
+| [MemoryModule](https://github.com/fancycode/MemoryModule) | 内存加载 DLL |
+| [libcurl](https://github.com/curl/curl) | 自动更新模块 |
+| [XZip-XUnZip](https://github.com/yuanjia1011/XZip-XUnZip) | 压缩/解压 |
+| BYOVD | 内核回调清除驱动 |
+
+---
+
+## 已测试极域版本
+
+- 2010 版（5.01.64.942 / 5.01 Baseline）
+- 2015 豪华版
+- 2016 豪华版（2.07.0.13488 / 2.07 CMPC）
+
+## 系统要求
+
+- **Windows 10 / 11**（64 位系统，32 位进程）
+
+---
+
+## 常见问题
+
+**Q: 杀毒软件报毒？**
+A: 本软件涉及进程注入、驱动加载等操作，可能被误报。可添加白名单或临时关闭杀毒。
+
+**Q: 教师端限制了 U 盘？**
+A: 先卸载极域的文件过滤驱动：
+```cmd
+sc stop TDFileFilter
+sc delete TDFileFilter
+```
+然后再插入 U 盘。
+
+**Q: 教师端限制了网络？**
+A: JiYuTrainer 可自动卸载网络驱动。若无效，可使用 PCHunter 强制卸载 `TDNetFilter.sys`。
+
+---
+
+## License
+
+[MIT License](LICENSE)
