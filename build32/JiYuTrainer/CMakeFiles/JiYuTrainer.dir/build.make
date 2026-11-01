@@ -191,26 +191,11 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/md5.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/JiYuTrainer.dir/md5.cpp.s"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S D:\code\JiYuTrainer-master\JiYuTrainer\md5.cpp -o CMakeFiles\JiYuTrainer.dir\md5.cpp.s
 
-JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MD5Utils.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/flags.make
-JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MD5Utils.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
-JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MD5Utils.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/MD5Utils.cpp
-JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MD5Utils.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MD5Utils.cpp.obj"
-	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MD5Utils.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\MD5Utils.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\MD5Utils.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\MD5Utils.cpp
-
-JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MD5Utils.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/JiYuTrainer.dir/MD5Utils.cpp.i"
-	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E D:\code\JiYuTrainer-master\JiYuTrainer\MD5Utils.cpp > CMakeFiles\JiYuTrainer.dir\MD5Utils.cpp.i
-
-JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MD5Utils.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/JiYuTrainer.dir/MD5Utils.cpp.s"
-	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S D:\code\JiYuTrainer-master\JiYuTrainer\MD5Utils.cpp -o CMakeFiles\JiYuTrainer.dir\MD5Utils.cpp.s
-
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MemoryModule.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/flags.make
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MemoryModule.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MemoryModule.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/MemoryModule.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MemoryModule.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MemoryModule.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MemoryModule.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MemoryModule.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\MemoryModule.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\MemoryModule.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\MemoryModule.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MemoryModule.cpp.i: cmake_force
@@ -225,7 +210,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MsgCenter.cpp.obj: JiYuTrainer/CMakeFiles
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MsgCenter.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MsgCenter.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/MsgCenter.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MsgCenter.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MsgCenter.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MsgCenter.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MsgCenter.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\MsgCenter.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\MsgCenter.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\MsgCenter.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MsgCenter.cpp.i: cmake_force
@@ -240,7 +225,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NetUtils.cpp.obj: JiYuTrainer/CMakeFiles/
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NetUtils.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NetUtils.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/NetUtils.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NetUtils.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NetUtils.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NetUtils.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NetUtils.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\NetUtils.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\NetUtils.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\NetUtils.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NetUtils.cpp.i: cmake_force
@@ -255,7 +240,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NtHlp.cpp.obj: JiYuTrainer/CMakeFiles/JiY
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NtHlp.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NtHlp.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/NtHlp.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NtHlp.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NtHlp.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NtHlp.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NtHlp.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\NtHlp.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\NtHlp.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\NtHlp.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NtHlp.cpp.i: cmake_force
@@ -270,7 +255,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NTDExt.cpp.obj: JiYuTrainer/CMakeFiles/Ji
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NTDExt.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NTDExt.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/NTDExt.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NTDExt.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NTDExt.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NTDExt.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NTDExt.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\NTDExt.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\NTDExt.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\NTDExt.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NTDExt.cpp.i: cmake_force
@@ -285,7 +270,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/PathHelper.cpp.obj: JiYuTrainer/CMakeFile
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/PathHelper.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/PathHelper.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/PathHelper.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/PathHelper.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/PathHelper.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/PathHelper.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/PathHelper.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\PathHelper.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\PathHelper.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\PathHelper.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/PathHelper.cpp.i: cmake_force
@@ -300,7 +285,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MythwareExt.cpp.obj: JiYuTrainer/CMakeFil
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MythwareExt.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MythwareExt.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/MythwareExt.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MythwareExt.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MythwareExt.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MythwareExt.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MythwareExt.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\MythwareExt.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\MythwareExt.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\MythwareExt.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MythwareExt.cpp.i: cmake_force
@@ -315,7 +300,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/RegHlp.cpp.obj: JiYuTrainer/CMakeFiles/Ji
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/RegHlp.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/RegHlp.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/RegHlp.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/RegHlp.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/RegHlp.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/RegHlp.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/RegHlp.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\RegHlp.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\RegHlp.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\RegHlp.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/RegHlp.cpp.i: cmake_force
@@ -330,7 +315,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/SettingHlp.cpp.obj: JiYuTrainer/CMakeFile
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/SettingHlp.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/SettingHlp.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/SettingHlp.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/SettingHlp.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/SettingHlp.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/SettingHlp.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/SettingHlp.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\SettingHlp.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\SettingHlp.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\SettingHlp.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/SettingHlp.cpp.i: cmake_force
@@ -345,7 +330,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/StringHlp.cpp.obj: JiYuTrainer/CMakeFiles
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/StringHlp.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/StringHlp.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/StringHlp.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/StringHlp.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/StringHlp.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/StringHlp.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/StringHlp.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\StringHlp.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\StringHlp.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\StringHlp.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/StringHlp.cpp.i: cmake_force
@@ -360,7 +345,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/StringSplit.cpp.obj: JiYuTrainer/CMakeFil
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/StringSplit.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/StringSplit.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/StringSplit.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/StringSplit.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/StringSplit.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/StringSplit.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/StringSplit.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\StringSplit.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\StringSplit.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\StringSplit.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/StringSplit.cpp.i: cmake_force
@@ -375,7 +360,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/SysHlp.cpp.obj: JiYuTrainer/CMakeFiles/Ji
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/SysHlp.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/SysHlp.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/SysHlp.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/SysHlp.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/SysHlp.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/SysHlp.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/SysHlp.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\SysHlp.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\SysHlp.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\SysHlp.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/SysHlp.cpp.i: cmake_force
@@ -390,7 +375,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/TrainerWorker.cpp.obj: JiYuTrainer/CMakeF
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/TrainerWorker.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/TrainerWorker.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/TrainerWorker.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/TrainerWorker.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/TrainerWorker.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/TrainerWorker.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/TrainerWorker.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\TrainerWorker.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\TrainerWorker.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\TrainerWorker.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/TrainerWorker.cpp.i: cmake_force
@@ -405,7 +390,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/TxtUtils.cpp.obj: JiYuTrainer/CMakeFiles/
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/TxtUtils.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/TxtUtils.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/TxtUtils.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/TxtUtils.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/TxtUtils.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/TxtUtils.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/TxtUtils.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\TxtUtils.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\TxtUtils.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\TxtUtils.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/TxtUtils.cpp.i: cmake_force
@@ -420,7 +405,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/window_utils.cpp.obj: JiYuTrainer/CMakeFi
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/window_utils.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/window_utils.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/window_utils.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/window_utils.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/window_utils.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/window_utils.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/window_utils.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\window_utils.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\window_utils.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\window_utils.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/window_utils.cpp.i: cmake_force
@@ -435,7 +420,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/inject.cpp.obj: JiYuTrainer/CMakeFiles/Ji
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/inject.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/inject.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/inject.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/inject.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/inject.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/inject.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/inject.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\inject.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\inject.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\inject.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/inject.cpp.i: cmake_force
@@ -450,7 +435,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/FloatingWindow.cpp.obj: JiYuTrainer/CMake
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/FloatingWindow.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/FloatingWindow.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/FloatingWindow.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/FloatingWindow.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/FloatingWindow.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/FloatingWindow.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/FloatingWindow.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\FloatingWindow.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\FloatingWindow.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\FloatingWindow.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/FloatingWindow.cpp.i: cmake_force
@@ -465,7 +450,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/XUnzip.cpp.obj: JiYuTrainer/CMakeFiles/Ji
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/XUnzip.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/XUnzip.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/XUnzip.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/XUnzip.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/XUnzip.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/XUnzip.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/XUnzip.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\XUnzip.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\XUnzip.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\XUnzip.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/XUnzip.cpp.i: cmake_force
@@ -480,7 +465,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/XZip.cpp.obj: JiYuTrainer/CMakeFiles/JiYu
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/XZip.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/includes_CXX.rsp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/XZip.cpp.obj: D:/code/JiYuTrainer-master/JiYuTrainer/XZip.cpp
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/XZip.cpp.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/XZip.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building CXX object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/XZip.cpp.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\i686-w64-mingw32-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT JiYuTrainer/CMakeFiles/JiYuTrainer.dir/XZip.cpp.obj -MF CMakeFiles\JiYuTrainer.dir\XZip.cpp.obj.d -o CMakeFiles\JiYuTrainer.dir\XZip.cpp.obj -c D:\code\JiYuTrainer-master\JiYuTrainer\XZip.cpp
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/XZip.cpp.i: cmake_force
@@ -493,7 +478,7 @@ JiYuTrainer/CMakeFiles/JiYuTrainer.dir/XZip.cpp.s: cmake_force
 
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/JiYuTrainer.rc.obj: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/flags.make
 JiYuTrainer/CMakeFiles/JiYuTrainer.dir/JiYuTrainer.rc.obj: D:/code/JiYuTrainer-master/JiYuTrainer/JiYuTrainer.rc
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building RC object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/JiYuTrainer.rc.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building RC object JiYuTrainer/CMakeFiles/JiYuTrainer.dir/JiYuTrainer.rc.obj"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && D:\code\mingw32\bin\windres.exe -O coff $(RC_DEFINES) $(RC_INCLUDES) $(RC_FLAGS) D:\code\JiYuTrainer-master\JiYuTrainer\JiYuTrainer.rc CMakeFiles\JiYuTrainer.dir\JiYuTrainer.rc.obj
 
 # Object files for target JiYuTrainer
@@ -506,7 +491,6 @@ JiYuTrainer_OBJECTS = \
 "CMakeFiles/JiYuTrainer.dir/KernelUtils.cpp.obj" \
 "CMakeFiles/JiYuTrainer.dir/Logger.cpp.obj" \
 "CMakeFiles/JiYuTrainer.dir/md5.cpp.obj" \
-"CMakeFiles/JiYuTrainer.dir/MD5Utils.cpp.obj" \
 "CMakeFiles/JiYuTrainer.dir/MemoryModule.cpp.obj" \
 "CMakeFiles/JiYuTrainer.dir/MsgCenter.cpp.obj" \
 "CMakeFiles/JiYuTrainer.dir/NetUtils.cpp.obj" \
@@ -539,7 +523,6 @@ bin/JiYuTrainer.exe: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/JyUdpAttack.cpp.obj
 bin/JiYuTrainer.exe: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/KernelUtils.cpp.obj
 bin/JiYuTrainer.exe: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/Logger.cpp.obj
 bin/JiYuTrainer.exe: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/md5.cpp.obj
-bin/JiYuTrainer.exe: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MD5Utils.cpp.obj
 bin/JiYuTrainer.exe: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MemoryModule.cpp.obj
 bin/JiYuTrainer.exe: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/MsgCenter.cpp.obj
 bin/JiYuTrainer.exe: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/NetUtils.cpp.obj
@@ -566,7 +549,7 @@ bin/JiYuTrainer.exe: lib/libJiYuTrainerUpdater.a
 bin/JiYuTrainer.exe: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/linkLibs.rsp
 bin/JiYuTrainer.exe: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/objects1.rsp
 bin/JiYuTrainer.exe: JiYuTrainer/CMakeFiles/JiYuTrainer.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Linking CXX executable ..\bin\JiYuTrainer.exe"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=D:\code\JiYuTrainer-master\build32\CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Linking CXX executable ..\bin\JiYuTrainer.exe"
 	cd /d D:\code\JiYuTrainer-master\build32\JiYuTrainer && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\JiYuTrainer.dir\link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

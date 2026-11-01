@@ -18,7 +18,6 @@ public:
 	static std::wstring GetFileName(std::wstring path);
 	static std::wstring GetDirectoryName(std::wstring path);
 	static bool IsValidateFolderFileName(std::wstring path);
-	static bool RemoveQuotes(LPWSTR pathBuffer, size_t bufferSize);
 
 	static std::wstring GetFileNameWithoutExtension(LPCWSTR path);
 	static std::wstring GetExtension(LPCWSTR path);

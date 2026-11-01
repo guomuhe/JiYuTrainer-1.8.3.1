@@ -112,20 +112,6 @@ typedef UINT (WINAPI *fnSendInput)(
 	UINT cInputs,                     // number of input in the array
 	__in_ecount(cInputs) LPINPUT pInputs,  // array of inputs
 	int cbSize);
-typedef BOOL(WINAPI *fnSetThreadDesktop)(HDESK hDesktop);
-typedef LONG(WINAPI *fnChangeDisplaySettingsW)(
-	DEVMODEW* lpDevMode,
-	DWORD dwFlags);
-typedef HDESK (WINAPI  *fnOpenDesktopA)(
-	LPCSTR lpszDesktop,
-	DWORD dwFlags,
-	BOOL fInherit,
-	ACCESS_MASK dwDesiredAccess);
-typedef HDESK (WINAPI  *fnOpenInputDesktop)(
-	DWORD dwFlags,
-	BOOL fInherit,
-	ACCESS_MASK dwDesiredAccess);
-typedef HRESULT(__cdecl *fnTDDeskCreateInstance)(CLSID *rclsid, LPUNKNOWN pUnkOuter, DWORD dwClsContext, IID *riid, LPVOID *ppv);
 typedef LONG (WINAPI  *fnSetWindowLongA)(
 	HWND hWnd,
 	int nIndex,
@@ -141,9 +127,6 @@ typedef BOOL (WINAPI *fnShowWindow)(
 typedef BOOL (WINAPI *fnExitWindowsEx)(
 	UINT uFlags,
 	DWORD dwReason);
-typedef HINSTANCE (WINAPI* fnShellExecuteW)(HWND hwnd, LPCWSTR lpOperation, LPCWSTR lpFile, LPCWSTR lpParameters,
-	LPCWSTR lpDirectory, INT nShowCmd);
-typedef BOOL (WINAPI* fnShellExecuteExW)(SHELLEXECUTEINFOW *pExecInfo);
 typedef BOOL (WINAPI* fnCreateProcessW)(
 	LPCWSTR lpApplicationName,
 	LPWSTR lpCommandLine,

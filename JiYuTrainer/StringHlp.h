@@ -51,7 +51,6 @@ public:
 	static LPCWSTR LongToStrW(long i);
 	static int StrToIntA(char * str);
 	static int StrToIntW(LPCWSTR str);
-	static bool StrToBoolA(LPCSTR str);
 	static bool StrToBoolW(LPCWSTR str);
 	static DWORD StrSplitA(char * str, LPCSTR splitStr, LPCSTR * result, char ** lead);
 	static DWORD StrSplitW(wchar_t * str, const LPCWSTR splitStr, LPCWSTR * result, wchar_t ** lead);

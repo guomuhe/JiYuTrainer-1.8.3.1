@@ -3,7 +3,6 @@
 #include "JiYuTrainer.h"
 #include "App.h"
 #include "PathHelper.h"
-#include "MD5Utils.h"
 #include "SysHlp.h"
 #include "StringHlp.h"
 #include "NtHlp.h"

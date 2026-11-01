@@ -585,20 +585,6 @@ void TrainerWorkerInternal::RunResetPid()
 
 	}
 
-	/*
-	newPid = 0;
-	if (LocateMasterHelper(&newPid)) {
-		if (_MasterHelperPid != newPid)
-		{
-			_MasterHelperPid = newPid;
-			if (InstallVirusForMaster()) currentLogger->Log(L"向 MasterHelper.exe [%d] 注入DLL成功", newPid);
-			else  currentLogger->LogError(L"向 MasterHelper.exe [%d] 注入DLL失败", newPid);
-		}
-	}
-	else {
-		_MasterHelperPid = 0;
-	}
-	*/
 }
 
 bool TrainerWorkerInternal::FlushProcess()
@@ -835,22 +821,6 @@ bool TrainerWorkerInternal::LocateStudentMain(DWORD *outFirstPid)
 	}
 	return false;
 }
-bool TrainerWorkerInternal::LocateMasterHelper(DWORD *outFirstPid)
-{
-	if (current_system_process)
-	{
-		bool done = false;
-		for (PSYSTEM_PROCESSES p = current_system_process; !done; p = PSYSTEM_PROCESSES(PCHAR(p) + p->NextEntryOffset)) {
-			if (p->ImageName.Length && StrEqual(p->ImageName.Buffer, L"MasterHelper.exe"))
-			{
-				if (outFirstPid)*outFirstPid = (DWORD)p->ProcessId;
-				return true;
-			}
-			done = p->NextEntryOffset == 0;
-		}
-	}
-	return false;
-}
 
 void TrainerWorkerInternal::UpdateStudentMainInfo(bool byUser)
 {
@@ -921,10 +891,6 @@ void TrainerWorkerInternal::UpdateState()
 bool TrainerWorkerInternal::InstallVirus()
 {
 	return InjectDll(_StudentMainPid, currentApp->GetPartFullPath(PART_HOOKER));
-}
-bool TrainerWorkerInternal::InstallVirusForMaster()
-{
-	return InjectDll(_MasterHelperPid, currentApp->GetPartFullPath(PART_HOOKER));
 }
 bool TrainerWorkerInternal::InjectDll(DWORD pid, LPCWSTR dllPath)
 {

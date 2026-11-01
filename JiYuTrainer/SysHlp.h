@@ -19,7 +19,6 @@ public:
 	static LPCWSTR ConvertLasyErrorToString();
 
 	static bool CheckIsPortabilityDevice(LPCWSTR path);
-	static bool CheckIsDesktop(LPCWSTR path);
 
 	static LPCWSTR GetTempPath();
 	static bool EnableDebugPriv(const wchar_t * name);

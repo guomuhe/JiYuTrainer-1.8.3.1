@@ -400,8 +400,6 @@ JiYuTrainerUI/CMakeFiles/JiYuTrainerUI.dir/MainWindow.cpp.obj: \
  D:/code/JiYuTrainer-master/JiYuTrainer/KernelUtils.h \
  D:/code/JiYuTrainer-master/JiYuTrainer/NtHlp.h \
  D:/code/JiYuTrainer-master/JiYuTrainer/DriverLoader.h \
- D:/code/JiYuTrainer-master/JiYuTrainer/MD5Utils.h \
- D:/code/JiYuTrainer-master/JiYuTrainer/md5.h \
  D:/code/JiYuTrainer-master/JiYuTrainer/PathHelper.h \
  D:/code/mingw32/i686-w64-mingw32/include/shlwapi.h \
  D:/code/mingw32/i686-w64-mingw32/include/shtypes.h \

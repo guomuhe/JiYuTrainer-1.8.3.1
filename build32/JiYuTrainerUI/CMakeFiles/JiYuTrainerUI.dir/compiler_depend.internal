@@ -2228,7 +2228,6 @@ JiYuTrainerUI/CMakeFiles/JiYuTrainerUI.dir/MainWindow.cpp.obj
  D:/code/JiYuTrainer-master/JiYuTrainer/JyUdpAttack.h
  D:/code/JiYuTrainer-master/JiYuTrainer/KernelUtils.h
  D:/code/JiYuTrainer-master/JiYuTrainer/Logger.h
- D:/code/JiYuTrainer-master/JiYuTrainer/MD5Utils.h
  D:/code/JiYuTrainer-master/JiYuTrainer/MythwareExt.h
  D:/code/JiYuTrainer-master/JiYuTrainer/NtHlp.h
  D:/code/JiYuTrainer-master/JiYuTrainer/PathHelper.h
@@ -2237,7 +2236,6 @@ JiYuTrainerUI/CMakeFiles/JiYuTrainerUI.dir/MainWindow.cpp.obj
  D:/code/JiYuTrainer-master/JiYuTrainer/StringSplit.h
  D:/code/JiYuTrainer-master/JiYuTrainer/SysHlp.h
  D:/code/JiYuTrainer-master/JiYuTrainer/TrainerWorker.h
- D:/code/JiYuTrainer-master/JiYuTrainer/md5.h
  D:/code/JiYuTrainer-master/JiYuTrainer/stdafx.h
  D:/code/JiYuTrainer-master/JiYuTrainer/targetver.h
  D:/code/JiYuTrainer-master/JiYuTrainerUI/sciter-sdk/include/aux-cvt.h

@@ -1,0 +1,8 @@
+=== JiYuTrainer ===== 2026/11/01 15:07:36 ===========
+应用程序错误 ：Address : 0x00000000  Code : 0xC0000005  (0x00000000)
+=== JiYuTrainer =====================================
+我们生成了关于描述这个错误的错误报告(不包含您的个人信息)：
+=== 文件内容 =====================================
+[错误转储文件] D:\code\JiYuTrainer-master\Release\JiYuTrainerCrashDump20261101-150736.dmp
+[程序运行日志] D:\code\JiYuTrainer-master\Release\JiYuTrainer.log
+=== 1.7.016.0202 =================================

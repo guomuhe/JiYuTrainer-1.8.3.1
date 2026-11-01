@@ -112,14 +112,10 @@ fnSetWindowsHookExA faSetWindowsHookExA = NULL;
 fnDeferWindowPos faDeferWindowPos = NULL;
 fnSendInput faSendInput = NULL;
 fnmouse_event famouse_event = NULL;
-fnChangeDisplaySettingsW faChangeDisplaySettingsW = NULL;
-fnTDDeskCreateInstance faTDDeskCreateInstance = NULL;
 fnSetWindowLongA faSetWindowLongA = NULL;
 fnSetWindowLongW faSetWindowLongW = NULL;
 fnShowWindow faShowWindow = NULL;
 fnExitWindowsEx faExitWindowsEx = NULL;
-fnShellExecuteW faShellExecuteW = NULL;
-fnShellExecuteExW faShellExecuteExW = NULL;
 fnCreateProcessA faCreateProcessA = NULL;
 fnCreateProcessW faCreateProcessW = NULL;
 fnDwmEnableComposition faDwmEnableComposition = NULL;
@@ -997,7 +993,6 @@ void VInstallHooks(VirusMode mode) {
 	faDeferWindowPos = (fnDeferWindowPos)GetProcAddress(hUser32, "DeferWindowPos");
 	faBringWindowToTop = (fnBringWindowToTop)GetProcAddress(hUser32, "BringWindowToTop");
 	faSendInput = (fnSendInput)GetProcAddress(hUser32, "SendInput");
-	faChangeDisplaySettingsW = (fnChangeDisplaySettingsW)GetProcAddress(hUser32, "ChangeDisplaySettingsW");
 	famouse_event = (fnmouse_event)GetProcAddress(hUser32, "mouse_event");
 	faSetWindowLongA = (fnSetWindowLongA)GetProcAddress(hUser32, "SetWindowLongA");
 	faSetWindowLongW = (fnSetWindowLongW)GetProcAddress(hUser32, "SetWindowLongW");
@@ -1023,8 +1018,6 @@ void VInstallHooks(VirusMode mode) {
 	faWinExec = (fnWinExec)GetProcAddress(hKernel32, "WinExec");
 
 	faExitWindowsEx = (fnExitWindowsEx)GetProcAddress(hUser32, "ExitWindowsEx");
-	//faShellExecuteW = (fnShellExecuteW)GetProcAddress(hShell32, "ShellExecuteW");
-	//faShellExecuteExW = (fnShellExecuteExW)GetProcAddress(hShell32, "ShellExecuteExW");
 
 	faCreateDCW = (fnCreateDCW)GetProcAddress(hGdi32, "CreateDCW");
 
@@ -1032,10 +1025,6 @@ void VInstallHooks(VirusMode mode) {
 	if (hLibJPEG20) faEncodeToJPEGBuffer = (fnEncodeToJPEGBuffer)GetProcAddress(hLibJPEG20, "EncodeToJPEGBuffer");
 	if (hFltLib) faFilterConnectCommunicationPort = (fnFilterConnectCommunicationPort)GetProcAddress(hFltLib, "FilterConnectCommunicationPort");
 
-	//HMODULE hTDDesk2 = GetModuleHandle(L"libtddesk2.dll");
-	//if (hTDDesk2) {
-	//	faTDDeskCreateInstance = (fnTDDeskCreateInstance)GetProcAddress(hTDDesk2, "TDDeskCreateInstance");
-	//}
 
 	if (mode == VirusModeHook) {
 
@@ -1063,16 +1052,12 @@ void VInstallHooks(VirusMode mode) {
 		hk10 = Mhook_SetHook((PVOID*)&faSendInput, hkSendInput);
 		hk11 = Mhook_SetHook((PVOID*)&famouse_event, hkmouse_event);
 
-		//if(faTDDeskCreateInstance) 
-		//	hk15 = Mhook_SetHook((PVOID*)&faTDDeskCreateInstance, hkTDDeskCreateInstance);
 
 		hk16 = Mhook_SetHook((PVOID*)&faSetWindowLongA, hkSetWindowLongA);
 		hk17 = Mhook_SetHook((PVOID*)&faSetWindowLongW, hkSetWindowLongW);
 		hk18 = Mhook_SetHook((PVOID*)&faShowWindow, hkShowWindow);
 		hk19 = Mhook_SetHook((PVOID*)&faExitWindowsEx, hkExitWindowsEx);
 
-		//hk20 = Mhook_SetHook((PVOID*)&faShellExecuteW, hkShellExecuteW);
-		//if(faShellExecuteExW) hk21 = Mhook_SetHook((PVOID*)&faShellExecuteExW, hkShellExecuteExW);
 
 		hk22 = Mhook_SetHook((PVOID*)&faCreateProcessW, hkCreateProcessW);
 
@@ -1125,17 +1110,11 @@ void VUnInstallHooks() {
 	if (hk9) Mhook_Unhook((PVOID*)&faDeferWindowPos);
 	if (hk10) Mhook_Unhook((PVOID*)&faSendInput);
 	if (hk11) Mhook_Unhook((PVOID*)&famouse_event);
-	//if (hk12) Mhook_Unhook((PVOID*)&faChangeDisplaySettingsW);
-	//if (hk13) Mhook_Unhook((PVOID*)&faOpenDesktopA);
-	//if (hk14) Mhook_Unhook((PVOID*)&faOpenInputDesktop);
-	//if (hk15) Mhook_Unhook((PVOID*)&faTDDeskCreateInstance);
 	if (hk16) Mhook_Unhook((PVOID*)&faSetWindowLongA);
 	if (hk17) Mhook_Unhook((PVOID*)&faSetWindowLongW);
 	if (hk18) Mhook_Unhook((PVOID*)&faShowWindow);
 
 	if (hk19) Mhook_Unhook((PVOID*)&faExitWindowsEx);
-	if (hk20) Mhook_Unhook((PVOID*)&faShellExecuteW);
-	if (hk21) Mhook_Unhook((PVOID*)&faShellExecuteExW);
 	if (hk22) Mhook_Unhook((PVOID*)&faCreateProcessW);
 	if (hk23) Mhook_Unhook((PVOID*)&faDwmEnableComposition);
 	if (hk24) Mhook_Unhook((PVOID*)&faWinExec);
@@ -1389,27 +1368,6 @@ BOOL WINAPI hkExitWindowsEx(UINT uFlags, DWORD dwReason) {
 	SetLastError(ERROR_ACCESS_DENIED);
 	return FALSE;
 }
-HINSTANCE WINAPI hkShellExecuteW(HWND hwnd, LPCWSTR lpOperation, LPCWSTR lpFile, LPCWSTR lpParameters, LPCWSTR lpDirectory, INT nShowCmd) {
-
-	/*if (StrEqual(lpOperation, L"open") || StrEqual(lpOperation, L"runas")) {
-		if (VGetExtension(wstring(lpFile)) == L".exe") {
-			if (bandAllRunOp || !VShowOpConfirmDialog(lpFile, lpParameters))
-				return hInst;
-		}
-	}*/
-	return faShellExecuteW(hwnd, lpOperation, lpFile, lpParameters, lpDirectory, nShowCmd);
-}
-BOOL WINAPI hkShellExecuteExW(SHELLEXECUTEINFOW *pExecInfo) {
-
-	/*if (StrEqual(pExecInfo->lpFile, L"open") || StrEqual(pExecInfo->lpFile, L"runas")) {
-		if (bandAllRunOp || VGetExtension(wstring(pExecInfo->lpFile)) == L".exe") {
-			if (!VShowOpConfirmDialog(pExecInfo->lpFile, pExecInfo->lpParameters)) 
-				return TRUE;
-		}
-	}*/
-	return faShellExecuteExW(pExecInfo);
-
-}
 BOOL WINAPI hkCreateProcessW(LPCWSTR lpApplicationName, LPWSTR lpCommandLine, LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles, DWORD dwCreationFlags, LPVOID lpEnvironment, LPCWSTR lpCurrentDirectory, LPSTARTUPINFOW lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation)
 {
 	bool canContinue = true;
@@ -1499,20 +1457,6 @@ UINT WINAPI hkWinExec(LPCSTR lpCmdLine, UINT uCmdShow) {
 	delete uniStr;
 	if (canContinue) return faWinExec(lpCmdLine, uCmdShow);
 	else return 32;
-}
-LONG WINAPI hkChangeDisplaySettingsW(DEVMODEW* lpDevMode, DWORD dwFlags)
-{
-	return DISP_CHANGE_SUCCESSFUL;
-}
-HDESK WINAPI hkOpenDesktopA(LPCSTR lpszDesktop, DWORD dwFlags, BOOL fInherit, ACCESS_MASK dwDesiredAccess)
-{
-	SetLastError(ERROR_ACCESS_DENIED);
-	return NULL;
-}
-HDESK WINAPI hkOpenInputDesktop(DWORD dwFlags,BOOL fInherit, ACCESS_MASK dwDesiredAccess)
-{
-	SetLastError(ERROR_ACCESS_DENIED);
-	return NULL;
 }
 LONG WINAPI hkSetWindowLongA(HWND hWnd, int nIndex, LONG dwNewLong)
 {

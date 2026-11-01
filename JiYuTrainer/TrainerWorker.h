@@ -166,7 +166,6 @@ private:
 	bool ReadTopDomanPassword(BOOL forceKnock);
 	bool LocateStudentMainLocation();
 	bool LocateStudentMain(DWORD *outFirstPid);
-	bool LocateMasterHelper(DWORD *outFirstPid);
 
 	/* Update ui*/
 
@@ -176,7 +175,6 @@ private:
 	/*Virus*/
 
 	bool InstallVirus();
-	bool InstallVirusForMaster();
 	bool InjectDll(DWORD pid, LPCWSTR dllPath);
 	bool UnInjectDll(DWORD pid, LPCWSTR moduleName);
 	bool UnLoadAllVirus();

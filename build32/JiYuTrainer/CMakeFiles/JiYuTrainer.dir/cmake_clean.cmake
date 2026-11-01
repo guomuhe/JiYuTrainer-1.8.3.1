@@ -20,8 +20,6 @@ file(REMOVE_RECURSE
   "CMakeFiles/JiYuTrainer.dir/KernelUtils.cpp.obj.d"
   "CMakeFiles/JiYuTrainer.dir/Logger.cpp.obj"
   "CMakeFiles/JiYuTrainer.dir/Logger.cpp.obj.d"
-  "CMakeFiles/JiYuTrainer.dir/MD5Utils.cpp.obj"
-  "CMakeFiles/JiYuTrainer.dir/MD5Utils.cpp.obj.d"
   "CMakeFiles/JiYuTrainer.dir/MemoryModule.cpp.obj"
   "CMakeFiles/JiYuTrainer.dir/MemoryModule.cpp.obj.d"
   "CMakeFiles/JiYuTrainer.dir/MsgCenter.cpp.obj"

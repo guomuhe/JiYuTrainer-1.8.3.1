@@ -11,7 +11,6 @@ set(MAIN_SOURCES
     KernelUtils.cpp
     Logger.cpp
     md5.cpp
-    MD5Utils.cpp
     MemoryModule.cpp
     MsgCenter.cpp
     NetUtils.cpp
@@ -78,3 +77,4 @@ set_target_properties(JiYuTrainer PROPERTIES
     WIN32_EXECUTABLE TRUE
     OUTPUT_NAME "JiYuTrainer"
 )
+

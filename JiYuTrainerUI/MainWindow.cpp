@@ -12,7 +12,6 @@
 #include "../JiYuTrainer/KernelUtils.h"
 #include "../JiYuTrainer/DriverLoader.h"
 #include "../JiYuTrainer/SysHlp.h"
-#include "../JiYuTrainer/MD5Utils.h"
 #include "../JiYuTrainer/PathHelper.h"
 #include "../JiYuTrainerUpdater/JiYuTrainerUpdater.h"
 
@@ -1265,7 +1264,6 @@ void MainWindow::ResetSettings()
 	SaveSettings();
 }
 
-
 VOID WINAPI MainWindow::UpdateThread(LPVOID lpFiberParameter)
 {
 	MainWindow* self = (MainWindow*)lpFiberParameter;
@@ -1330,9 +1328,6 @@ void MainWindow::CreateTrayIcon(HWND hDlg) {
 	nid.hIcon = LoadIcon(currentApp->GetInstance(), MAKEINTRESOURCE(IDI_APP));
 	lstrcpy(nid.szTip, L"JiYuTrainer");
 	Shell_NotifyIcon(NIM_ADD, &nid);
-}
-void MainWindow::HideTrayIcon() {
-	Shell_NotifyIcon(NIM_DELETE, &nid);
 }
 void MainWindow::SetTaskbarIconVisible(bool show) {
 	if (!show) {

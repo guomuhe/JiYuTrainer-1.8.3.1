@@ -59,7 +59,6 @@ public:
 	//Tray
 
 	void CreateTrayIcon(HWND hDlg);
-	void HideTrayIcon();
 	void SetTaskbarIconVisible(bool show);
 	void ShowTrayBaloonTip(const wchar_t* title, const wchar_t* text);
 

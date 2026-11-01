@@ -120,13 +120,6 @@ bool  SysHlp::CheckIsPortabilityDevice(LPCWSTR path) {
 	}
 	return false;
 }
-bool SysHlp::CheckIsDesktop(LPCWSTR path)
-{
-	wchar_t desktopPath[MAX_PATH];
-	if (!SHGetSpecialFolderPathW(0, desktopPath, 0x0010, 0))
-		return FALSE;
-	return wcscmp(desktopPath, path) == 0;
-}
 
 LPCWSTR SysHlp::GetTempPath()
 {

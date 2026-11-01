@@ -22,7 +22,6 @@ public:
 	void Close();
 	void Show();
 	void Hide();
-	void SetToTop();
 
 	BEGIN_FUNCTION_MAP
 		FUNCTION_0("docunmentComplete", docunmentComplete);

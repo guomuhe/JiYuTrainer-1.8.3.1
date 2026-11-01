@@ -5,7 +5,6 @@
 #include <string>
 #include "AppPublic.h"
 #include "SysHlp.h"
-#include "MD5Utils.h"
 #include "MemoryModule.h"
 
 extern "C" int JiYuTrainerUICommonEntry(int i);
@@ -138,7 +137,6 @@ private:
 	SettingHlp *appSetting = nullptr;
 	TrainerWorker *appWorker = nullptr;
 	JyUdpAttack* appJyUdpAttack = nullptr;
-	MD5Utils * appMd5Utils = nullptr;
 
 	void MergePathString();
 	void InitPath();

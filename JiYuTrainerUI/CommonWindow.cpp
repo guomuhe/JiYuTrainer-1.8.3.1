@@ -69,10 +69,6 @@ void CommonWindow::Close()
 {
 	DestroyWindow(_hWnd);
 }
-void CommonWindow::SetToTop()
-{
-	SetForegroundWindow(_hWnd);
-}
 void CommonWindow::Show()
 {
 	ShowWindow(_hWnd, SW_SHOW);

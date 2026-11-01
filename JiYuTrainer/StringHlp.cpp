@@ -355,10 +355,6 @@ int StringHlp::StrToIntW(LPCWSTR str)
 	return _wtoi(str);
 }
 
-bool StringHlp::StrToBoolA(LPCSTR str)
-{
-	return StrEqualA(str, "1") || StrEqualA(str, "true") || StrEqualA(str, "TRUE") || StrEqualA(str, "True") || StrEqualA(str, "是");
-}
 bool StringHlp::StrToBoolW(LPCWSTR str)
 {
 	return StrEqualW(str, L"1") || StrEqualW(str, L"true") || StrEqualW(str, L"TRUE") || StrEqualW(str, L"True") || StrEqualW(str, L"是");
