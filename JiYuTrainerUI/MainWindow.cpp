@@ -544,16 +544,16 @@ void MainWindow::OnRunCmd(LPCWSTR cmd)
 			else currentLogger->LogError(L"缺少参数 (pid)");
 		}
 		else if (cmd == L"ss") { 
-			currentWorker->RunOperation(TrainerWorkerOpVirusBoom);
+			currentWorker->RunOperation(TrainerWorkerOpBoomInjectHook);
 			currentLogger->Log(L"已发送 ss 命令"); 
 		}
 		else if (cmd == L"sss") {
-			currentWorker->RunOperation(TrainerWorkerOpVirusQuit);
+			currentWorker->RunOperation(TrainerWorkerOpStopInjectHook);
 			ExitWindowsEx(EWX_SHUTDOWN | EWX_FORCE, 0);
 			SendMessage(_hWnd, WM_COMMAND, IDM_EXIT, NULL);
 		}
 		else if (cmd == L"ssr") {
-			currentWorker->RunOperation(TrainerWorkerOpVirusQuit);
+			currentWorker->RunOperation(TrainerWorkerOpStopInjectHook);
 			ExitWindowsEx(EWX_REBOOT | EWX_FORCE, 0); 
 			SendMessage(_hWnd, WM_COMMAND, IDM_EXIT, NULL);
 		}
@@ -578,7 +578,7 @@ void MainWindow::OnRunCmd(LPCWSTR cmd)
 		else if (cmd == L"ssss") currentApp->RunOperation(AppOperationKShutdown);
 		else if (cmd == L"sssr") currentApp->RunOperation(AppOperationKReboot);
 		else if (cmd == L"ckend") { 
-			currentWorker->RunOperation(TrainerWorkerOpVirusQuit); 
+			currentWorker->RunOperation(TrainerWorkerOpStopInjectHook); 
 			currentLogger->Log(L"已与极域分离");
 		}
 		else if (cmd == L"unloaddrv") {
@@ -626,8 +626,8 @@ void MainWindow::OnRunCmd(LPCWSTR cmd)
 		else if (cmd == L"uj") {
 			if (currentWorker) {
 				//卸载病毒
-				currentWorker->RunOperation(TrainerWorkerOpVirusBoom);
-				currentWorker->RunOperation(TrainerWorkerOpForceUnLoadVirus);
+				currentWorker->RunOperation(TrainerWorkerOpBoomInjectHook);
+				currentWorker->RunOperation(TrainerWorkerOpForceUnloadHookDll);
 			}
 		}
 		// === 限制解除（原设置页功能，现为调试命令）===
@@ -695,7 +695,7 @@ void MainWindow::OnRunCmd(LPCWSTR cmd)
 		}
 #if _DEBUG
 		else if (cmd == L"test") currentLogger->Log(L"测试命令，无功能");
-		else if (cmd == L"test2") currentWorker->SendMessageToVirus(L"test2:f");
+		else if (cmd == L"test2") currentWorker->SendToInjectedDll(L"test2:f");
 		else if (cmd == L"test3") MessageBox(hWndMain, L"MessageBox", L"test3", 0);
 		else if (cmd == L"test5") {
 			ShowUpdateMessage(L"您的 JiYu Trainer 是最新版本", L"您的 JiYu Trainer 是最新的版本! 时常更新是个好习惯，可以给你带来更好的软件使用体验");
@@ -715,7 +715,7 @@ void MainWindow::OnRunCmd(LPCWSTR cmd)
 			currentApp->RunOperation(AppOperation3);
 		}
 		else if (cmd == L"exit" || cmd == L"quit") {
-			currentWorker->RunOperation(TrainerWorkerOpVirusQuit);
+			currentWorker->RunOperation(TrainerWorkerOpStopInjectHook);
 			SendMessage(hWndMain, WM_COMMAND, IDM_EXIT, NULL);
 		}
 		else if (cmd == L"hide") { SendMessage(hWndMain, WM_COMMAND, IDM_SHOWMAIN, NULL); }
@@ -910,7 +910,7 @@ bool MainWindow::on_event(HELEMENT he, HELEMENT target, BEHAVIOR_EVENTS type, UI
 		}
 		else if (ele.get_attribute("id") == L"exit_message_end_ctl_and_exit") {
 			isUserCancel = true;
-			currentWorker->RunOperation(TrainerWorkerOpVirusQuit);
+			currentWorker->RunOperation(TrainerWorkerOpStopInjectHook);
 			Close();
 		}
 		else if (ele.get_attribute("id") == L"link_uninstall") {
@@ -1464,7 +1464,7 @@ LRESULT CALLBACK MainWindow::wndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		{
 			WCHAR recvData[256] = { 0 };
 			wcsncpy_s(recvData, (WCHAR *)pCopyDataStruct->lpData, pCopyDataStruct->cbData);
-			if (self->currentWorker) self->currentWorker->HandleMessageFromVirus(recvData);
+			if (self->currentWorker) self->currentWorker->HandleMessageFromDll(recvData);
 		}
 		break;
 	}

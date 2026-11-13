@@ -4,10 +4,10 @@
 #include "SysHlp.h"
 
 enum TrainerWorkerOp {
-	TrainerWorkerOpVirusBoom,
-	TrainerWorkerOpVirusQuit,
+	TrainerWorkerOpBoomInjectHook,
+	TrainerWorkerOpStopInjectHook,
 	TrainerWorkerOp1,
-	TrainerWorkerOpForceUnLoadVirus,
+	TrainerWorkerOpForceUnloadHookDll,
 	TrainerWorkerOp2,
 	TrainerWorkerOp3,
 	TrainerWorkerOp4,
@@ -84,8 +84,8 @@ public:
 	virtual void ApplyAntiCapture() {}
 
 	virtual void SetUpdateInfoCallback(TrainerWorkerCallback *callback) {}
-	virtual void HandleMessageFromVirus(LPCWSTR buf) {}
-	virtual void SendMessageToVirus(LPCWSTR buf) {}
+	virtual void HandleMessageFromDll(LPCWSTR buf) {}
+	virtual void SendToInjectedDll(LPCWSTR buf) {}
 	virtual bool AppointStudentMainLocation(LPCWSTR fullPath) { return false; }
 };
 
@@ -109,8 +109,8 @@ public:
 	void* RunOperation(TrainerWorkerOp op);
 
 	void SetUpdateInfoCallback(TrainerWorkerCallback *callback);
-	void HandleMessageFromVirus(LPCWSTR buf);
-	void SendMessageToVirus(LPCWSTR buf);
+	void HandleMessageFromDll(LPCWSTR buf);
+	void SendToInjectedDll(LPCWSTR buf);
 	bool AppointStudentMainLocation(LPCWSTR fullPath);
 	DWORD GetStudentMainPid() { return _StudentMainPid; }
 
@@ -124,7 +124,7 @@ private:
 	bool _Running = false;
 	HDESK hDesktop = NULL;
 
-	bool _VirusInstalled = false;
+	bool _HookDllInjected = false;
 	DWORD _StudentMainPid = 0;
 	DWORD _MasterHelperPid = 0;
 	std::wstring _StudentMainPath;
@@ -174,10 +174,10 @@ private:
 
 	/*Virus*/
 
-	bool InstallVirus();
+	bool InjectHookDll();
 	bool InjectDll(DWORD pid, LPCWSTR dllPath);
 	bool UnInjectDll(DWORD pid, LPCWSTR moduleName);
-	bool UnLoadAllVirus();
+	bool UnloadHookDll();
 	bool UnLoadNetFilterDriver();
 	bool UnLoadJiYuProtectDriver();
 

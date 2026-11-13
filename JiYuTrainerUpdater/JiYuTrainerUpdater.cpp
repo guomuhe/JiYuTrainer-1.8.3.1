@@ -190,7 +190,7 @@ UPEXPORT_CFUNC(BOOL) JUpdater_RunInstallion()
 	if (Path::Exists(updateFilePath)) {
 		//强制卸载已注入的病毒
 		if(appCurrent->GetTrainerWorker())
-			appCurrent->GetTrainerWorker()->RunOperation(TrainerWorkerOpForceUnLoadVirus);
+			appCurrent->GetTrainerWorker()->RunOperation(TrainerWorkerOpForceUnloadHookDll);
 		//运行更新
 		if (SysHlp::RunApplicationPriviledge(updateFilePath, appCurrent->MakeFromSourceArg(L"-install-full")) && GetLastError() == ERROR_CANCELLED) {
 			MessageBox(nullptr, L"您取消了更新", L"", MB_ICONEXCLAMATION);

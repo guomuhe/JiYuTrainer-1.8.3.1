@@ -4,7 +4,7 @@
 
 std::list<HWND> jiyuWnds;
 
-void MsgCenterSendToVirus(LPCWSTR buff, HWND form) 
+void MsgCenterSendToInjectedDll(LPCWSTR buff, HWND form) 
 {
 	HWND receiveWindow = FindWindow(NULL, L"JiYu Trainer Virus Window");
 	if (receiveWindow) {
@@ -37,7 +37,7 @@ void MsgCenterSendHWNDS(HWND fromHWnd)
 		HWND hWnd = (*testiterator);
 		WCHAR str[65];
 		swprintf_s(str, L"hw:%d", (LONG)hWnd);
-		MsgCenterSendToVirus(str, fromHWnd);
+		MsgCenterSendToInjectedDll(str, fromHWnd);
 	}
 	jiyuWnds.clear();
 	//ResetGBStatus(iwndCount, lastHasGb, lastHasHp);

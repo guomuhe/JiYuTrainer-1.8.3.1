@@ -230,8 +230,8 @@ void JTAppInternal::UnInstall()
 {
 	//卸载病毒
 	if (appWorker) {
-		appWorker->RunOperation(TrainerWorkerOpVirusBoom);
-		appWorker->RunOperation(TrainerWorkerOpForceUnLoadVirus);
+		appWorker->RunOperation(TrainerWorkerOpBoomInjectHook);
+		appWorker->RunOperation(TrainerWorkerOpForceUnloadHookDll);
 	}
 	//稍后删除本体
 	Sleep(1000);

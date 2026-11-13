@@ -3,18 +3,18 @@
 #include <unknwn.h>
 #include <ShellAPI.h>
 
-enum VirusMode {
-	VirusModeProtet,
-	VirusModeHook,
-	VirusModeMaster,
-	VirusModeReplaceStub
+enum InjectionMode {
+	InjectionModeProtect,
+	InjectionModeHook,
+	InjectionModeMaster,
+	InjectionModeReplaceStub
 };
 
 EXTERN_C void __declspec(dllexport) VUnloadAll();
 EXTERN_C void __declspec(dllexport) VLoad();
 void VRunMain();
 
-void VLoadRealVirus();
+void VLoadRealHookDll();
 void VLoadMainProtect();
 void VParamInit();
 
@@ -41,7 +41,7 @@ bool VIsOpInWhiteList(const wchar_t * cmd);
 
 BOOL VShowOutOfControlDlg();
 
-void VInstallHooks(VirusMode mode);
+void VInstallHooks(InjectionMode mode);
 void VUnInstallHooks();
 
 void VOpenFuckDrivers();

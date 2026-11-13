@@ -128,7 +128,7 @@ END
 
 #ifdef _DEBUG
 
-IDR_DLL_DRIVER          BIN                     "..\\Debug\\JiYuTrainerDriver.sys"
+IDR_DLL_DRIVER          BIN                     "..\\JiYuTrainerDriver\\Debug\\JiYuTrainerDriver.sys"
 
 IDR_DLL_HOOKS           BIN                     "..\\Debug\\JiYuTrainerHooks.dll"
 
@@ -142,7 +142,7 @@ IDR_DLL_HIDE_HOOK        BIN                     "..\\Release\\JyuHideHook.dll"
 
 #else
 
-IDR_DLL_DRIVER          BIN                     "..\\Release\\JiYuTrainerDriver.sys"
+IDR_DLL_DRIVER          BIN                     "..\\JiYuTrainerDriver\\Release\\JiYuTrainerDriver.sys"
 
 IDR_DLL_HOOKS           BIN                     "..\\Release\\JiYuTrainerHooks.dll"
 

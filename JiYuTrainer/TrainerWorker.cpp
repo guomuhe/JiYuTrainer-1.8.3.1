@@ -81,7 +81,7 @@ void TrainerWorkerInternal::InitSettings()
 	if (setCkInterval < 1000 || setCkInterval > 10000) setCkInterval = 3000;
 
 	if (_StudentMainControlled)
-		SendMessageToVirus(L"hk:reset");
+		SendToInjectedDll(L"hk:reset");
 }
 void TrainerWorkerInternal::UpdateScreenSize()
 {
@@ -127,7 +127,7 @@ void TrainerWorkerInternal::SetUpdateInfoCallback(TrainerWorkerCallback *callbac
 	}
 }
 
-void TrainerWorkerInternal::HandleMessageFromVirus(LPCWSTR buf)
+void TrainerWorkerInternal::HandleMessageFromDll(LPCWSTR buf)
 {
 	wstring act(buf);
 	vector<wstring> arr;
@@ -144,7 +144,7 @@ void TrainerWorkerInternal::HandleMessageFromVirus(LPCWSTR buf)
 
 				//HS 
 				FAST_STR_BINDER(str, L"hs:%ld", 32, (ULONG_PTR)hWndMain);
-				SendMessageToVirus(str);
+				SendToInjectedDll(str);
 			}
 			else if (arr[1] == L"immck") {
 				RunCk();
@@ -190,9 +190,9 @@ void TrainerWorkerInternal::HandleMessageFromVirus(LPCWSTR buf)
 		}
 	}
 }
-void TrainerWorkerInternal::SendMessageToVirus(LPCWSTR buf)
+void TrainerWorkerInternal::SendToInjectedDll(LPCWSTR buf)
 {
-	MsgCenterSendToVirus(buf, hWndMain);
+	MsgCenterSendToInjectedDll(buf, hWndMain);
 }
 
 bool TrainerWorkerInternal::Kill(bool autoWork)
@@ -217,7 +217,7 @@ bool TrainerWorkerInternal::Kill(bool autoWork)
 		}
 		if (vkill) {
 			//Stop sginal
-			SendMessageToVirus(L"ss2:0");
+			SendToInjectedDll(L"ss2:0");
 			return true;
 		}
 	}
@@ -411,23 +411,23 @@ void* TrainerWorkerInternal::RunOperation(TrainerWorkerOp op)
 {
 	switch (op)
 	{
-	case TrainerWorkerOpVirusBoom: {
-		MsgCenterSendToVirus(L"ss:0", hWndMain);
+	case TrainerWorkerOpBoomInjectHook: {
+		MsgCenterSendToInjectedDll(L"ss:0", hWndMain);
 		return nullptr;
 	}
-	case TrainerWorkerOpVirusQuit: {
-		MsgCenterSendToVirus((LPWSTR)L"hk:ckend", hWndMain);
+	case TrainerWorkerOpStopInjectHook: {
+		MsgCenterSendToInjectedDll((LPWSTR)L"hk:ckend", hWndMain);
 		return nullptr;
 	}
 	case TrainerWorkerOp1: {
 		WCHAR s[300]; swprintf_s(s, L"hk:path:%s", currentApp->GetFullPath());
-		MsgCenterSendToVirus(s, hWndMain);
+		MsgCenterSendToInjectedDll(s, hWndMain);
 		swprintf_s(s, L"hk:inipath:%s", currentApp->GetPartFullPath(PART_INI));
-		MsgCenterSendToVirus(s, hWndMain);
+		MsgCenterSendToInjectedDll(s, hWndMain);
 		break;
 	}
-	case TrainerWorkerOpForceUnLoadVirus: {
-		UnLoadAllVirus();
+	case TrainerWorkerOpForceUnloadHookDll: {
+		UnloadHookDll();
 		break;
 	}
 	case TrainerWorkerOp2: {
@@ -546,7 +546,7 @@ void TrainerWorkerInternal::RunResetPid()
 	//CK GET STAT DELAY
 	if (_NextLoopGetCkStat) {
 		_NextLoopGetCkStat = false;
-		SendMessageToVirus(L"hk:ckstat");
+		SendToInjectedDll(L"hk:ckstat");
 	}
 
 	//Find jiyu main process
@@ -557,8 +557,8 @@ void TrainerWorkerInternal::RunResetPid()
 		{
 			_StudentMainPid = newPid;
 
-			if (InstallVirus()) {
-				_VirusInstalled = true;
+			if (InjectHookDll()) {
+				_HookDllInjected = true;
 				_NextLoopGetCkStat = true;
 
 				currentLogger->Log(L"向 StudentMain.exe [%d] 注入DLL成功", newPid);
@@ -857,7 +857,7 @@ void TrainerWorkerInternal::UpdateState()
 					_StatusTextMore = L"您已手动停止控制器<br / >当前不会对极域做任何操作";
 					status = TrainerWorkerCallback::TrainerStatus::TrainerStatusStopped;
 				}
-				else if (_VirusInstalled) {
+				else if (_HookDllInjected) {
 					_StatusTextMore = L"毒已插入极域，但未正常运行<br / ><span style=\"color:#f41702\">您可能需要重新启动极域</span>";
 					status = TrainerWorkerCallback::TrainerStatus::TrainerStatusUnknowProblem;
 				}
@@ -888,7 +888,7 @@ void TrainerWorkerInternal::UpdateState()
 	}
 }
 
-bool TrainerWorkerInternal::InstallVirus()
+bool TrainerWorkerInternal::InjectHookDll()
 {
 	return InjectDll(_StudentMainPid, currentApp->GetPartFullPath(PART_HOOKER));
 }
@@ -977,7 +977,7 @@ bool TrainerWorkerInternal::UnInjectDll(DWORD pid, LPCWSTR moduleName)
 
 	return true;
 }
-bool TrainerWorkerInternal::UnLoadAllVirus()
+bool TrainerWorkerInternal::UnloadHookDll()
 {
 	if (_MasterHelperPid > 4) {
 		if (UnInjectDll(_MasterHelperPid, L"JiYuTrainerHooks.dll"))
@@ -1003,12 +1003,12 @@ bool TrainerWorkerInternal::SwitchFakeFull()
 {
 	if (_FakeFull) { 
 		_FakeFull = false; 
-		SendMessageToVirus(L"hk:fkfull:false");
+		SendToInjectedDll(L"hk:fkfull:false");
 		FakeFull(_FakeFull);
 	}
 	else if(_StudentMainRunningLock) { 
 		_FakeFull = true; 
-		SendMessageToVirus(L"hk:fkfull:true");
+		SendToInjectedDll(L"hk:fkfull:true");
 		FakeFull(_FakeFull);
 	}
 

@@ -85,7 +85,7 @@ bool outlineEndJiy = false;
 HWND hWndOpConformNoBtn = NULL;
 bool bandAllRunOp = false, allowNextRunOp = false, allowAllRunOp  = false, ProhibitKillProcess = false, ProhibitCloseWindow = false;
 bool allowMonitor = false, allowControl = false, allowGbTop = false, fakeFull = false, gbFullManual = false,
-doNotShowVirusWindow = true, forceDisableWatchDog = false;
+doNotShowHookDllWindow = true, forceDisableWatchDog = false;
 bool isLocked = false, gbCurrentIsTop = false, isGbFounded = false;
 std::list<std::wstring> runOPWhiteList;
 bool forceKill = false;
@@ -190,7 +190,7 @@ void VLoad()
 		name = path.substr(lastQ + 1, path.length() - lastQ - 1);
 
 		if (name == L"LibTDAjust.dll") { //Current is virus stub dll , load real and alloc
-			VLoadRealVirus();
+			VLoadRealHookDll();
 			VRunMain();
 		}
 		else if (name == L"JiYuTrainerHooks.dll") {//Current is virus main dll
@@ -202,11 +202,11 @@ void VLoad()
 	}
 	else if (name == L"MasterHelper.exe") {
 		//MasterHelper.exe 搞一些事情
-		VInstallHooks(VirusModeMaster);
+		VInstallHooks(InjectionModeMaster);
 	}
 	else if (name == L"ProcHelper64.exe") {
 		//ProcHelper64.exe 搞一些事情
-		VInstallHooks(VirusModeMaster);
+		VInstallHooks(InjectionModeMaster);
 	}
 
 	loaded = true;
@@ -216,10 +216,10 @@ void VRunMain() {
 
 	VCreateMsgCenter();
 	VOpenFuckDrivers();
-	VInstallHooks(VirusModeHook);
+	VInstallHooks(InjectionModeHook);
 	VSendMessageBack(L"hkb:succ", hWndMsgCenter);
 }
-void VLoadRealVirus() {
+void VLoadRealHookDll() {
 	if (_waccess_s(L"LibTDAjust.dll.bak.dll", 0) == 0)
 	{
 		HMODULE hrealTDAjust = LoadLibrary(L"LibTDAjust.dll.bak.dll");
@@ -307,8 +307,8 @@ void VInitSettings()
 	else ProhibitCloseWindow = true;
 	
 	GetPrivateProfileString(L"JTSettings", L"DoNotShowVirusWindow", L"TRUE", w, 32, mainIniPath);
-	if (!StrEqual(w, L"TRUE") && !StrEqual(w, L"true") && !StrEqual(w, L"1")) doNotShowVirusWindow = false;
-	else doNotShowVirusWindow = true;
+	if (!StrEqual(w, L"TRUE") && !StrEqual(w, L"true") && !StrEqual(w, L"1")) doNotShowHookDllWindow = false;
+	else doNotShowHookDllWindow = true;
 
 	GetPrivateProfileString(L"JTSettings", L"ForceDisableWatchDog", L"FALSE", w, 32, mainIniPath);
 	if (!StrEqual(w, L"TRUE") && !StrEqual(w, L"true") && !StrEqual(w, L"1")) forceDisableWatchDog = false;
@@ -972,7 +972,7 @@ bool VIsOpInWhiteList(const wchar_t* cmd) {
 	return false;
 }
 
-void VInstallHooks(VirusMode mode) {
+void VInstallHooks(InjectionMode mode) {
 
 	//Mhook_SetHook
 	HMODULE hUser32 = GetModuleHandle(L"user32.dll");
@@ -1026,7 +1026,7 @@ void VInstallHooks(VirusMode mode) {
 	if (hFltLib) faFilterConnectCommunicationPort = (fnFilterConnectCommunicationPort)GetProcAddress(hFltLib, "FilterConnectCommunicationPort");
 
 
-	if (mode == VirusModeHook) {
+	if (mode == InjectionModeHook) {
 
 		//HMODULE hTDMaster = GetModuleHandle(L"libTDMaster.dll");
 		//UnHookLocalInput = (fnUnHookLocalInput)GetProcAddress(hTDMaster, "UnHookLocalInput");
@@ -1038,7 +1038,7 @@ void VInstallHooks(VirusMode mode) {
 			return;
 		}
 
-		VOutPutStatus(L"[D] Install hook in mode VirusModeHook");
+		VOutPutStatus(L"[D] Install hook in mode InjectionModeHook");
 
 		hk1 = Mhook_SetHook((PVOID*)&raSetWindowPos, hkSetWindowPos);
 		hk2 = Mhook_SetHook((PVOID*)&raMoveWindow, hkMoveWindow);
@@ -1086,11 +1086,11 @@ void VInstallHooks(VirusMode mode) {
 
 		if(faFilterConnectCommunicationPort) hk40 = Mhook_SetHook((PVOID*)&faFilterConnectCommunicationPort, hkFilterConnectCommunicationPort);
 	}
-	if (mode == VirusModeMaster) {
+	if (mode == InjectionModeMaster) {
 
 		g_hhook = SetWindowsHookExA(WH_CBT, VCBTProc, hInst, GetCurrentThreadId());
 		
-		VOutPutStatus(L"[D] Install hook in mode VirusModeMaster");
+		VOutPutStatus(L"[D] Install hook in mode InjectionModeMaster");
 
 		hk8 = Mhook_SetHook((PVOID*)&faSetWindowsHookExA, hkSetWindowsHookExA);
 		hk19 = Mhook_SetHook((PVOID*)&faExitWindowsEx, hkExitWindowsEx);
@@ -1653,7 +1653,7 @@ DWORD WINAPI hkSetClassLongW(HWND hWnd, int nIndex, LONG dwNewLong)
 	return faSetClassLongA(hWnd, nIndex, dwNewLong);
 }
 
-//HOOK Virus stub
+//HOOK inject stub
 EXTERN_C HRESULT __declspec(dllexport) __cdecl TDAjustCreateInstance(CLSID *rclsid, LPUNKNOWN pUnkOuter, DWORD dwClsContext, IID *riid, LPVOID *ppv)
 {
 	return faTDAjustCreateInstance(rclsid, pUnkOuter, dwClsContext, riid, ppv);
@@ -1816,7 +1816,7 @@ INT_PTR CALLBACK MainWndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		if (wParam == TIMER_AUTO_HIDE) {
 			KillTimer(hDlg, TIMER_AUTO_HIDE);
 			SendMessage(hDlg, WM_COMMAND, IDC_SHIDE, NULL);
-			if (doNotShowVirusWindow)
+			if (doNotShowHookDllWindow)
 				ShowWindow(hDlg, SW_HIDE);
 			if (forceDisableWatchDog)
 				KillTimer(hDlg, TIMER_WATCH_DOG_SRV);
