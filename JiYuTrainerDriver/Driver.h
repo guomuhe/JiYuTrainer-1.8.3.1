@@ -1,6 +1,16 @@
 #pragma once
 #include <ntifs.h>
 
+//=============================================================================
+//【仅限授权测试环境】
+// 历史遗留的 SSDT / Shadow SSDT 改写开关。该机制会触发 PatchGuard（BSOD），
+// 在启用 HVCI/VBS 的系统上会被内核拒绝。默认 0 = 不编译相关代码。
+// 只有在隔离的、已获授权的测试环境中才允许改为 1。
+//=============================================================================
+#ifndef JT_ENABLE_LEGACY_SSDT
+#define JT_ENABLE_LEGACY_SSDT 0
+#endif
+
 NTSTATUS DriverEntry(IN PDRIVER_OBJECT pDriverObject, IN PUNICODE_STRING pRegPath);
 VOID DriverUnload(_In_ struct _DRIVER_OBJECT *DriverObject);
 
@@ -99,10 +109,10 @@ typedef struct _KSERVICE_TABLE_DESCRIPTOR {
 extern __declspec(dllimport) KSERVICE_TABLE_DESCRIPTOR KeServiceDescriptorTable[NUMBER_SERVICE_TABLES];
 
 
-//���� ZwServiceFunction ��ȡ ZwServiceFunction �� SSDT ������Ӧ�ķ���������� 
+//根据 ZwServiceFunction 获取 ZwServiceFunction 在 SSDT 中所对应的服务的索引号 
 #define SYSCALL_INDEX(ServiceFunction) (*(PULONG)((PUCHAR)ServiceFunction + 1))
 
-//����ZwServiceFunction ����÷����� SSDT �е������ţ�Ȼ����ͨ��������������ȡntServiceFunction�ĵ�ַ 
+//根据ZwServiceFunction 来获得服务在 SSDT 中的索引号，然后再通过该索引号来获取ntServiceFunction的地址 
 #define SYSCALL_FUNCTION(ServiceFunction) KeServiceDescriptorTable->ntoskrnl.ServiceTableBase[SYSCALL_INDEX(ServiceFunction)]
 
 typedef VOID(*PKNORMAL_ROUTINE) (IN PVOID NormalContext, IN PVOID SystemArgument1, IN PVOID SystemArgument2);
@@ -156,6 +166,5 @@ extern NTSTATUS NTAPI ZwQueryInformationProcess(
 
 #define SYS_BULID_VERSION_7 7600
 #define SYS_BULID_VERSION_7_SP1 7601
-
 
 

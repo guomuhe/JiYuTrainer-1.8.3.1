@@ -20,7 +20,7 @@ fnZwTerminateProcess OldZwTerminateProcess;
 
 extern ULONG systemVersion;
 
-//´æ·Å±£»¤½ø³ÌµÄÒ»¸öÁ´±í
+//å­˜æ”¾ä¿æŠ¤è¿›ç¨‹çš„ä¸€ä¸ªé“¾è¡¨
 VOID KxInitProtectProcessList()
 {
 	protectProcsStart = ExAllocatePool(NonPagedPool, sizeof(PROTECT_PROC_STORAGE));
@@ -42,7 +42,7 @@ VOID KxDestroyProtectProcessList()
 }
 BOOLEAN KxIsProcessProtect(HANDLE pid)
 {
-	//¼ì²âpidÊÇ·ñ±»±£»¤
+	//æ£€æµ‹pidæ˜¯å¦è¢«ä¿æŠ¤
 	if (pid == 0)return FALSE;
 	PPROTECT_PROC_STORAGE ptr = protectProcsStart;
 	if (ptr->Next != NULL) {
@@ -61,7 +61,7 @@ VOID KxProtectProcessWithPid(HANDLE pid)
 	{
 		if (protectProcsEnd)
 		{
-			//Ìí¼Óµ½Á´±íÄ©Î²
+			//æ·»åŠ åˆ°é“¾è¡¨æœ«å°¾
 			protectProcsEnd->Next = ExAllocatePool(NonPagedPool, sizeof(PROTECT_PROC_STORAGE));
 			_memset(protectProcsEnd->Next, 0, sizeof(PROTECT_PROC_STORAGE));
 			((PPROTECT_PROC_STORAGE)protectProcsEnd->Next)->ProcessId = pid;
@@ -79,7 +79,7 @@ VOID KxUnProtectProcessWithPid(HANDLE pid)
 	PPROTECT_PROC_STORAGE ptr_for = protectProcsStart;
 	if (ptr->Next != NULL) {
 		do {
-			//Á´±íÉ¾³ıÏîÄ¿
+			//é“¾è¡¨åˆ é™¤é¡¹ç›®
 			if (ptr->ProcessId == pid) {
 				if (ptr_for) {
 					if (ptr->Next == NULL) {
@@ -100,7 +100,7 @@ VOID KxUnProtectProcessWithPid(HANDLE pid)
 	}
 }
 
-//³õÊ¼»¯ºÍÍË³ö
+//åˆå§‹åŒ–å’Œé€€å‡º
 NTSTATUS KxInitProtectProcess()
 {
 	if (!protectInited) {
@@ -121,28 +121,31 @@ NTSTATUS KxInitProtectProcess()
 		obReg.RegistrationContext = NULL;
 		RtlInitUnicodeString(&obReg.Altitude, L"321000");
 
-		memset(&opReg, 0, sizeof(opReg)); //³õÊ¼»¯				  
-		opReg.ObjectType = PsProcessType;//½ø³Ì
+		memset(&opReg, 0, sizeof(opReg)); //åˆå§‹åŒ–				  
+		opReg.ObjectType = PsProcessType;//è¿›ç¨‹
 		opReg.Operations = OB_OPERATION_HANDLE_CREATE | OB_OPERATION_HANDLE_DUPLICATE;
-		opReg.PreOperation = (POB_PRE_OPERATION_CALLBACK)&KxObPreCall; //ÔÚÕâÀï×¢²áÒ»¸ö»Øµ÷º¯ÊıÖ¸Õë
-		obReg.OperationRegistration = &opReg; //×¢ÒâÕâÒ»ÌõÓï¾ä
-		return _ObRegisterCallbacks(&obReg, &obHandle); //ÔÚÕâÀï×¢²á»Øµ÷º¯Êı
+		opReg.PreOperation = (POB_PRE_OPERATION_CALLBACK)&KxObPreCall; //åœ¨è¿™é‡Œæ³¨å†Œä¸€ä¸ªå›è°ƒå‡½æ•°æŒ‡é’ˆ
+		obReg.OperationRegistration = &opReg; //æ³¨æ„è¿™ä¸€æ¡è¯­å¥
+		return _ObRegisterCallbacks(&obReg, &obHandle); //åœ¨è¿™é‡Œæ³¨å†Œå›è°ƒå‡½æ•°
 	}
 	return TRUE;
 }
 VOID KxUnInitProtectProcess()
 {
-	if(obHandle) _ObUnRegisterCallbacks(obHandle); //È¡Ïû×¢²á»Øµ÷
+	if(obHandle) _ObUnRegisterCallbacks(obHandle); //å–æ¶ˆæ³¨å†Œå›è°ƒ
 	if (protectInited) {
 		KxDestroyProtectProcessList();
 		protectInited = FALSE;
 	}
+	//ã€ä»…é™æˆæƒæµ‹è¯•ç¯å¢ƒã€‘XP æ—¶ä»£çš„ SSDT è¿˜åŸéš JT_ENABLE_LEGACY_SSDT ä¸€èµ·ç¼–è¯‘ï¼Œé»˜è®¤ä¸å­˜åœ¨
+#if JT_ENABLE_LEGACY_SSDT
 	if (protectXPHooked) {
 		KxUnHookInXP();
 	}
+#endif
 }
 
-//»Øµ÷º¯Êı
+//å›è°ƒå‡½æ•°
 OB_PREOP_CALLBACK_STATUS KxObPreCall(PVOID RegistrationContext, POB_PRE_OPERATION_INFORMATION pOperationInformation)
 {
 	if (pOperationInformation->KernelHandle || pOperationInformation->ObjectType != *PsProcessType)
@@ -184,7 +187,7 @@ NTSTATUS NTAPI Hook_ZwTerminateProcess(__in_opt HANDLE ProcessHandle, __in NTSTA
 		return ntStatus;
 
 	uPID = (HANDLE)pbi.UniqueProcessId;
-	if (KxIsProcessProtect(uPID))//²»ÊÇµ±Ç°½ø³ÌPID£¬ÎªÁË¿Í»§¶Ë×Ô¼º¹Ø×Ô¼º
+	if (KxIsProcessProtect(uPID))//ä¸æ˜¯å½“å‰è¿›ç¨‹PIDï¼Œä¸ºäº†å®¢æˆ·ç«¯è‡ªå·±å…³è‡ªå·±
 	{
 		if (uPID != PsGetProcessId(PsGetCurrentProcess()))
 			return STATUS_ACCESS_DENIED;
@@ -195,6 +198,12 @@ NTSTATUS NTAPI Hook_ZwTerminateProcess(__in_opt HANDLE ProcessHandle, __in NTSTA
 }
 
 //SSDT HOOK For process in xp
+//=============================================================================
+//ã€ä»…é™æˆæƒæµ‹è¯•ç¯å¢ƒã€‘ä»¥ä¸‹ SSDT / Shadow SSDT æ”¹å†™ä»…åœ¨ JT_ENABLE_LEGACY_SSDT=1
+//æ—¶æ‰ä¼šç¼–è¯‘ã€‚è¯¥æœºåˆ¶åªé€‚ç”¨äº XP æ—¶ä»£çš„ç³»ç»Ÿï¼Œåœ¨ Win10+ ä¸Šä¼šè§¦å‘ PatchGuard
+//ï¼ˆBSODï¼‰ï¼Œåœ¨å¯ç”¨ HVCI/VBS çš„ç³»ç»Ÿä¸Šä¼šè¢«ç›´æ¥æ‹’ç»ã€‚é»˜è®¤æ„å»ºä¸åŒ…å«è¿™äº›ä»£ç ã€‚
+//=============================================================================
+#if JT_ENABLE_LEGACY_SSDT
 
 VOID KxHookInXP() 
 {
@@ -283,6 +292,9 @@ VOID DisableWriteProtect(ULONG oldAttr)
 		sti;
 	}
 }
+
+#endif //JT_ENABLE_LEGACY_SSDT
+
 VOID EnableWriteProtect(PULONG pOldAttr)
 {
 	ULONG uAttr;
@@ -294,6 +306,6 @@ VOID EnableWriteProtect(PULONG pOldAttr)
 		and  eax, 0FFFEFFFFh; // CR0 16 BIT = 0 
 		mov  cr0, eax;
 	};
-	//±£´æÔ­ÓĞµÄ CRO ÊôĞÔ 
+	//ä¿å­˜åŸæœ‰çš„ CRO å±æ€§ 
 	*pOldAttr = uAttr;
 }

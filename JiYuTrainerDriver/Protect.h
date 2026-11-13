@@ -22,18 +22,23 @@ VOID KxUnInitProtectProcess();
 
 OB_PREOP_CALLBACK_STATUS KxObPreCall(PVOID RegistrationContext, POB_PRE_OPERATION_INFORMATION pOperationInformation);
 
+//【仅限授权测试环境】SSDT / Shadow SSDT 改写仅保留给 XP 实验构建
+#if JT_ENABLE_LEGACY_SSDT
 VOID KxHookInXP();
 VOID KxUnHookInXP();
+#endif
 
 NTSTATUS InstallSysServiceHook(ULONG oldService, ULONG newService);
 NTSTATUS UnInstallSysServiceHook(ULONG oldService);
 
 VOID BackupSysServicesTable();
 
+#if JT_ENABLE_LEGACY_SSDT
 VOID KxShadowSSDTHook();
 VOID KxShadowSSDTUnHook();
 
 VOID DisableWriteProtect(ULONG oldAttr);
+#endif
 VOID EnableWriteProtect(PULONG pOldAttr);
 
 typedef NTSTATUS(NTAPI *fnZwOpenProcess)(

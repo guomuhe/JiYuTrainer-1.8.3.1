@@ -68,7 +68,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT pDriverObject, IN PUNICODE_STRING pRegPat
 	pDriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = IOControlDispatch;
 	pDriverObject->MajorFunction[IRP_MJ_CREATE] = CreateDispatch;
 
-	//´´½¨Çı¶¯Éè±¸¶ÔÏó	
+	//åˆ›å»ºé©±åŠ¨è®¾å¤‡å¯¹è±¡	
 	RtlInitUnicodeString(&DeviceLinkName, DEVICE_LINK_NAME);
 	ntStatus = IoCreateSymbolicLink(&DeviceLinkName, &DeviceObjectName);
 	if (!NT_SUCCESS(ntStatus))
@@ -79,14 +79,12 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT pDriverObject, IN PUNICODE_STRING pRegPat
 
 	LoadFunctions();
 
-#ifdef _AMD64_
-	PLDR_DATA_TABLE_ENTRY64 ldr;
-	ldr = (PLDR_DATA_TABLE_ENTRY64)pDriverObject->DriverSection;
-#else
-	PLDR_DATA_TABLE_ENTRY32 ldr;
-	ldr = (PLDR_DATA_TABLE_ENTRY32)pDriverObject->DriverSection;
-#endif
-	ldr->Flags |= 0x20;//ÈÆ¹ıMmVerifyCallbackFunction¡£
+	//=========================================================================
+	//ã€ä»…é™æˆæƒæµ‹è¯•ç¯å¢ƒã€‘å·²ç§»é™¤ ldr->Flags |= 0x20ï¼ˆç»•è¿‡ MmVerifyCallbackFunctionï¼‰ã€‚
+	// è¯¥åšæ³•ä¾èµ–æœªæ–‡æ¡£åŒ–çš„å†…æ ¸ç»“æ„ï¼Œåœ¨ Win10+ / HVCI ä¸‹ä¼šè¢«åˆ¤ä¸ºç¯¡æ”¹å¹¶å¯¼è‡´
+	// é©±åŠ¨åŠ è½½å¤±è´¥æˆ– BSODã€‚è‡ªæˆ‘ä¿æŠ¤æ”¹ä¸ºåªä½¿ç”¨å—æ”¯æŒçš„ ObRegisterCallbacks
+	//ï¼ˆè§ KxInitProtectProcessï¼‰ï¼Œè‹¥æ³¨å†Œå¤±è´¥åˆ™é©±åŠ¨é™çº§ä¸º"æ— è‡ªæˆ‘ä¿æŠ¤"ç»§ç»­å·¥ä½œã€‚
+	//=========================================================================
 
 	ntStatus = KxPsMonitorInit();
 	if (!NT_SUCCESS(ntStatus))
@@ -135,7 +133,7 @@ NTSTATUS IOControlDispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	PVOID OutputData = NULL;
 	ULONG OutputDataLength = 0;
 	ULONG IoControlCode = 0;
-	PIO_STACK_LOCATION  IoStackLocation = IoGetCurrentIrpStackLocation(Irp);  //Irp¶ÑÕ»  
+	PIO_STACK_LOCATION  IoStackLocation = IoGetCurrentIrpStackLocation(Irp);  //Irpå †æ ˆ  
 
 	IoControlCode = IoStackLocation->Parameters.DeviceIoControl.IoControlCode;
 	InputData = Irp->AssociatedIrp.SystemBuffer;
@@ -151,7 +149,10 @@ NTSTATUS IOControlDispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 		isWinXP = param->IsWinXP;
 		systemVersion = param->systemVersion;
 		LoadUnExpFunctions();
+#if JT_ENABLE_LEGACY_SSDT
+		//ã€ä»…é™æˆæƒæµ‹è¯•ç¯å¢ƒã€‘XP ä¸“ç”¨ SSDT æ”¹å†™ï¼Œé»˜è®¤ä¸ç¼–è¯‘
 		if (isWinXP) KxHookInXP();
+#endif
 		Status = STATUS_SUCCESS;
 		break;
 	}
@@ -161,12 +162,16 @@ NTSTATUS IOControlDispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 		break;
 	}
 	case CTL_UNINIT: {
+#if JT_ENABLE_LEGACY_SSDT
 		KxShadowSSDTUnHook();
+#endif
 		Status = STATUS_SUCCESS;
 		break;
 	}
 	case CTL_INITSELFPROTECT: {
+#if JT_ENABLE_LEGACY_SSDT
 		KxShadowSSDTHook();
+#endif
 		ULONG_PTR pid = *(ULONG_PTR*)InputData;
 		if (protectInited)
 		{
@@ -295,8 +300,8 @@ NTSTATUS IOControlDispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 
 	Irp->IoStatus.Status = Status; //Ring3 GetLastError();
 	Irp->IoStatus.Information = Informaiton;
-	IoCompleteRequest(Irp, IO_NO_INCREMENT);  //½«Irp·µ»Ø¸øIo¹ÜÀíÆ÷
-	return Status; //Ring3 DeviceIoControl()·µ»ØÖµ
+	IoCompleteRequest(Irp, IO_NO_INCREMENT);  //å°†Irpè¿”å›ç»™Ioç®¡ç†å™¨
+	return Status; //Ring3 DeviceIoControl()è¿”å›å€¼
 }
 NTSTATUS CreateDispatch(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 {
@@ -395,7 +400,7 @@ NTSTATUS ZeroKill(ULONG_PTR PID)   //X32  X64
 	if (NT_SUCCESS(ntStatus))
 	{
 		PKAPC_STATE pKs = (PKAPC_STATE)ExAllocatePool(NonPagedPool, sizeof(PKAPC_STATE));
-		KeStackAttachProcess(Eprocess, pKs);//Attach½ø³ÌĞéÄâ¿Õ¼ä
+		KeStackAttachProcess(Eprocess, pKs);//Attachè¿›ç¨‹è™šæ‹Ÿç©ºé—´
 		for (i = 0; i <= 0x7fffffff; i += 0x1000)
 		{
 			//__try {
@@ -405,12 +410,12 @@ NTSTATUS ZeroKill(ULONG_PTR PID)   //X32  X64
 					memset((PVOID)i, 0xcc, 0x1000);
 				}
 				else {
-					if (i > 0x1000000)  //ÌîÕâÃ´¶à×ã¹»ÆÆ»µ½ø³ÌÊı¾İÁË  
+					if (i > 0x1000000)  //å¡«è¿™ä¹ˆå¤šè¶³å¤Ÿç ´åè¿›ç¨‹æ•°æ®äº†  
 						break;
 				}
 			/*}
 			__except (1) {
-				KdPrint(("---´íÎó!---"));
+				KdPrint(("---é”™è¯¯!---"));
 			}*/
 		}
 		KeUnstackDetachProcess(pKs); 
@@ -445,7 +450,7 @@ NTSTATUS KillProcess(PEPROCESS pEProcess)
 			}
 		/*}
 		__except (1) {
-			KdPrint(("---´íÎó!---"));
+			KdPrint(("---é”™è¯¯!---"));
 		}*/
 	}
 	if (_PsResumeProcess) _PsResumeProcess(pEProcess);
@@ -453,14 +458,14 @@ NTSTATUS KillProcess(PEPROCESS pEProcess)
 	return status;
 }
 
-//APC ½áÊø½ø³Ì»Øµ÷
+//APC ç»“æŸè¿›ç¨‹å›è°ƒ
 VOID  KernelKillThreadRoutine(IN PKAPC Apc, IN OUT PKNORMAL_ROUTINE *NormalRoutine, IN OUT PVOID *NormalContext, IN OUT PVOID *SystemArgument1, IN OUT PVOID *SystemArgument2)
 {
 	PspExitThread(STATUS_SUCCESS);
 }
 
-//Ê¹ÓÃ²åÈëapc·½·¨Ç¿ÖÆ½áÊøÏß³Ì
-//  PETHREAD Thread£ºĞèÒª½áÊøµÄÏß³Ì
+//ä½¿ç”¨æ’å…¥apcæ–¹æ³•å¼ºåˆ¶ç»“æŸçº¿ç¨‹
+//  PETHREAD Threadï¼šéœ€è¦ç»“æŸçš„çº¿ç¨‹
 NTSTATUS KxTerminateThreadApc(PETHREAD Thread)
 {
 	NTSTATUS Status = STATUS_SUCCESS;
@@ -481,7 +486,7 @@ NTSTATUS KxTerminateThreadApc(PETHREAD Thread)
 			return STATUS_ACCESS_DENIED;
 
 		if (PspExitThread == NULL)
-			//Ê¹ÓÃ PspTerminateThreadByPointer ½áÊø
+			//ä½¿ç”¨ PspTerminateThreadByPointer ç»“æŸ
 			return PspTerminateThreadByPointer(Thread, 0, FALSE);
 
 		Status = STATUS_SUCCESS;
@@ -497,7 +502,7 @@ NTSTATUS KxTerminateThreadApc(PETHREAD Thread)
 		//	OldMask = PS_TEST_SET_BITS((ULONG_PTR*)((ULONG_PTR)Thread + ETHREAD_CrossThreadFlags_Offest), PS_CROSS_THREAD_FLAGS_TERMINATED);
 
 		if (!PsIsThreadTerminating(Thread)) {
-			//ÎªÏß³Ì³õÊ¼»¯APC
+			//ä¸ºçº¿ç¨‹åˆå§‹åŒ–APC
 			KeInitializeApc(ExitApc, Thread, OriginalApcEnvironment, KernelKillThreadRoutine, NULL, NULL, KernelMode, NULL);
 			if (!KeInsertQueueApc(ExitApc, ExitApc, NULL, 2))
 			{
@@ -509,7 +514,7 @@ NTSTATUS KxTerminateThreadApc(PETHREAD Thread)
 				/*
 				if (KeForceResumeThread != 0 && ETHREAD_Tcb_Offest != 0)
 				{
-					//WRK ³­À´µÄ£¬Ç¿ÖÆ»Ö¸´ÔİÍ£µÄÏß³Ì£¬±£Ö¤Ïß³Ì¿ÉÒÔÔËĞĞ²åÈëµÄapc
+					//WRK æŠ„æ¥çš„ï¼Œå¼ºåˆ¶æ¢å¤æš‚åœçš„çº¿ç¨‹ï¼Œä¿è¯çº¿ç¨‹å¯ä»¥è¿è¡Œæ’å…¥çš„apc
 					KxForceResumeThread(Thread);
 				}
 				*/
