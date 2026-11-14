@@ -162,8 +162,8 @@ IDR_DLL_HIDE_HOOK        BIN                     "..\\Release\\JyuHideHook.dll"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,8,3,1
- PRODUCTVERSION 1,8,3,1
+ FILEVERSION 1,8,3,5
+ PRODUCTVERSION 1,8,3,5
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -180,12 +180,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "?????"
             VALUE "FileDescription", "JiYu Trainer Pocket Edition"
-            VALUE "FileVersion", "1.8.3.1"
+            VALUE "FileVersion", "1.8.3.5"
             VALUE "InternalName", "JiYuTrai.exe"
             VALUE "LegalCopyright", "Copyright ? 2026 ?????, All rights reserved."
             VALUE "OriginalFilename", "JiYuTrai.exe"
             VALUE "ProductName", "JiYu Trainer"
-            VALUE "ProductVersion", "1.8.3.1"
+            VALUE "ProductVersion", "1.8.3.5"
         END
     END
     BLOCK "VarFileInfo"
