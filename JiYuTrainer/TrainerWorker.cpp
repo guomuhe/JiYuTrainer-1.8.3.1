@@ -890,103 +890,219 @@ void TrainerWorkerInternal::UpdateState()
 
 bool TrainerWorkerInternal::InjectHookDll()
 {
+	//F-03: InjectMode=None 降级为仅 Ring3 能力（结束进程/监控），避免被安全软件反复拦截
+	if (setInjectMode == L"None") {
+		static bool warned = false;
+		if (!warned) {
+			currentLogger->LogWarn(L"注入已被配置禁用（InjectMode=None），广播拦截等高级功能不可用");
+			warned = true;
+		}
+		return false;
+	}
 	return InjectDll(_StudentMainPid, currentApp->GetPartFullPath(PART_HOOKER));
+}
+
+// F-03：根据错误码给出用户可执行建议
+static void LogInjectErrorHint(DWORD lastError) {
+	switch (lastError) {
+	case ERROR_ACCESS_DENIED:          // 5
+	case 0xC0000022 /*STATUS_ACCESS_DENIED*/:
+		currentLogger->LogWarn(L"  建议：请以管理员身份运行本程序，或关闭安全软件/加白名单"); break;
+	case ERROR_NOT_ENOUGH_MEMORY:       // 8
+		currentLogger->LogWarn(L"  建议：目标进程内存不足，请重启极域后重试"); break;
+	case ERROR_INVALID_HANDLE:          // 6
+		currentLogger->LogWarn(L"  建议：目标进程已退出，请重新检测"); break;
+	case ERROR_NOACCESS:                // 998
+		currentLogger->LogWarn(L"  建议：被安全软件拦截，请加白名单后重试"); break;
+	case ERROR_INVALID_PARAMETER:       // 87
+		currentLogger->LogWarn(L"  建议：参数无效，可能是目标位数不匹配"); break;
+	case ERROR_GEN_FAILURE:             // 31
+	case ERROR_BAD_EXE_FORMAT:          // 193
+		currentLogger->LogWarn(L"  建议：DLL 位数与目标进程不匹配"); break;
+	default:
+		if (lastError >= 1)
+			currentLogger->LogWarn(L"  建议：请确认 JiYuTrainerHooks.dll 未被杀毒软件隔离");
+		break;
+	}
 }
 bool TrainerWorkerInternal::InjectDll(DWORD pid, LPCWSTR dllPath)
 {
-	HANDLE hRemoteProcess;
+	HANDLE hRemoteProcess = NULL;
 	//打开进程
 	NTSTATUS ntStatus = MOpenProcessNt(pid, &hRemoteProcess);
 	if (!NT_SUCCESS(ntStatus)) {
-		currentLogger->LogError2(L"注入病毒失败！打开进程失败：0x%08X", ntStatus);
+		currentLogger->LogError2(L"注入模块失败：打开进程失败：0x%08X", ntStatus);
+		LogInjectErrorHint((DWORD)(ntStatus & 0xFFFF));
 		return FALSE;
 	}
 
-	wchar_t *pszLibFileRemote;
+	//位数校验：跨位数注入必然失败，提前拒绝并给出明确原因
+	BOOL selfWow64 = FALSE, targetWow64 = FALSE;
+	BOOL selfOk = IsWow64Process(GetCurrentProcess(), &selfWow64);
+	BOOL targetOk = IsWow64Process(hRemoteProcess, &targetWow64);
+	if (!selfOk || !targetOk || selfWow64 != targetWow64) {
+		currentLogger->LogError2(L"注入模块失败：进程位数不匹配（本程序 WoW64=%d，目标 WoW64=%d）",
+			selfOk ? (int)selfWow64 : -1, targetOk ? (int)targetWow64 : -1);
+		CloseHandle(hRemoteProcess);
+		return FALSE;
+	}
+
+	wchar_t *pszLibFileRemote = NULL;
 
 	//使用VirtualAllocEx函数在远程进程的内存地址空间分配DLL文件名空间
-	pszLibFileRemote = (wchar_t *)VirtualAllocEx(hRemoteProcess, NULL, sizeof(wchar_t) * (lstrlen(dllPath) + 1), MEM_COMMIT, PAGE_READWRITE);
-
-	//使用WriteProcessMemory函数将DLL的路径名写入到远程进程的内存空间
-	WriteProcessMemory(hRemoteProcess, pszLibFileRemote, (void *)dllPath, sizeof(wchar_t) * (lstrlen(dllPath) + 1), NULL);
-
-	//##############################################################################
-		//计算LoadLibraryA的入口地址
-	PTHREAD_START_ROUTINE pfnStartAddr = (PTHREAD_START_ROUTINE)GetProcAddress(GetModuleHandle(TEXT("Kernel32")), "LoadLibraryW");
-	//(关于GetModuleHandle函数和GetProcAddress函数)
-
-	//启动远程线程LoadLibraryW，通过远程线程调用创建新的线程
-	HANDLE hRemoteThread;
-	if ((hRemoteThread = CreateRemoteThread(hRemoteProcess, NULL, 0, pfnStartAddr, pszLibFileRemote, 0, NULL)) == NULL)
-	{
-		currentLogger->LogError2(L"注入线程失败! 错误：CreateRemoteThread %d", GetLastError());
+	size_t pathBytes = sizeof(wchar_t) * (lstrlen(dllPath) + 1);
+	pszLibFileRemote = (wchar_t *)VirtualAllocEx(hRemoteProcess, NULL, pathBytes, MEM_COMMIT, PAGE_READWRITE);
+	if (pszLibFileRemote == NULL) {
+		DWORD err = GetLastError();
+		currentLogger->LogError2(L"注入模块失败：VirtualAllocEx 失败（错误码 %d）", err);
+		LogInjectErrorHint(err);
+		CloseHandle(hRemoteProcess);
 		return FALSE;
 	}
 
-	// 释放句柄
+	//使用WriteProcessMemory函数将DLL的路径名写入到远程进程的内存空间
+	if (!WriteProcessMemory(hRemoteProcess, pszLibFileRemote, (void *)dllPath, pathBytes, NULL)) {
+		DWORD err = GetLastError();
+		currentLogger->LogError2(L"注入模块失败：WriteProcessMemory 失败（错误码 %d，可能被安全软件拦截）", err);
+		LogInjectErrorHint(err);
+		VirtualFreeEx(hRemoteProcess, pszLibFileRemote, 0, MEM_RELEASE);
+		CloseHandle(hRemoteProcess);
+		return FALSE;
+	}
 
-	CloseHandle(hRemoteProcess);
+	//计算LoadLibraryW的入口地址
+	PTHREAD_START_ROUTINE pfnStartAddr = (PTHREAD_START_ROUTINE)GetProcAddress(GetModuleHandle(TEXT("Kernel32")), "LoadLibraryW");
+	if (pfnStartAddr == NULL) {
+		currentLogger->LogError2(L"注入模块失败：无法定位 LoadLibraryW");
+		VirtualFreeEx(hRemoteProcess, pszLibFileRemote, 0, MEM_RELEASE);
+		CloseHandle(hRemoteProcess);
+		return FALSE;
+	}
+
+	//启动远程线程LoadLibraryW，通过远程线程调用创建新的线程
+	HANDLE hRemoteThread = NULL;
+	if ((hRemoteThread = CreateRemoteThread(hRemoteProcess, NULL, 0, pfnStartAddr, pszLibFileRemote, 0, NULL)) == NULL)
+	{
+		DWORD err = GetLastError();
+		currentLogger->LogError2(L"注入模块失败：CreateRemoteThread 失败（错误码 %d）", err);
+		LogInjectErrorHint(err);
+		VirtualFreeEx(hRemoteProcess, pszLibFileRemote, 0, MEM_RELEASE);
+		CloseHandle(hRemoteProcess);
+		return FALSE;
+	}
+
+	//等待远端加载完成（带超时，避免无期限挂起）
+	DWORD waitResult = WaitForSingleObject(hRemoteThread, 10000);
+	DWORD remoteExitCode = 0;
+	if (waitResult == WAIT_OBJECT_0)
+		GetExitCodeThread(hRemoteThread, &remoteExitCode);
+
+	VirtualFreeEx(hRemoteProcess, pszLibFileRemote, 0, MEM_RELEASE);
 	CloseHandle(hRemoteThread);
+	CloseHandle(hRemoteProcess);
+
+	if (waitResult != WAIT_OBJECT_0) {
+		currentLogger->LogError2(L"注入模块失败：远程线程未在 10 秒内完成（等待结果 %d）", waitResult);
+		currentLogger->LogWarn(L"  建议：远端 LoadLibraryW 可能被安全软件挂钩拦截，请加白名单");
+		return FALSE;
+	}
+	if (remoteExitCode == 0) {
+		currentLogger->LogError2(L"注入模块失败：远端 LoadLibraryW 返回 0，DLL 可能被安全软件拦截或位数不匹配");
+		currentLogger->LogWarn(L"  建议：请确认 JiYuTrainerHooks.dll 位数与极域进程一致，且未被安全软件隔离");
+		return FALSE;
+	}
 
 	return true;
 }
 bool TrainerWorkerInternal::UnInjectDll(DWORD pid, LPCWSTR moduleName)
 {
-	HANDLE hProcess;
+	HANDLE hProcess = NULL;
 	//打开进程
 	NTSTATUS ntStatus = MOpenProcessNt(pid, &hProcess);
 	if (!NT_SUCCESS(ntStatus)) {
-		currentLogger->LogError2(L"卸载病毒失败！打开进程失败：0x%08X", ntStatus);
+		currentLogger->LogError2(L"卸载模块失败：打开进程失败：0x%08X", ntStatus);
+		LogInjectErrorHint((DWORD)(ntStatus & 0xFFFF));
 		return FALSE;
 	}
 	DWORD pszLibFileRemoteSize = sizeof(wchar_t) * (lstrlen(moduleName) + 1);
-	wchar_t *pszLibFileRemote;
+	wchar_t *pszLibFileRemote = NULL;
 	//使用VirtualAllocEx函数在远程进程的内存地址空间分配DLL文件名空间
 	pszLibFileRemote = (wchar_t *)VirtualAllocEx(hProcess, NULL, pszLibFileRemoteSize, MEM_COMMIT, PAGE_READWRITE);
+	if (pszLibFileRemote == NULL) {
+		DWORD err = GetLastError();
+		currentLogger->LogError2(L"卸载模块失败：VirtualAllocEx 失败（错误码 %d）", err);
+		LogInjectErrorHint(err);
+		CloseHandle(hProcess);
+		return FALSE;
+	}
 	//使用WriteProcessMemory函数将DLL的路径名写入到远程进程的内存空间
-	WriteProcessMemory(hProcess, pszLibFileRemote, (void *)moduleName, pszLibFileRemoteSize, NULL);
+	if (!WriteProcessMemory(hProcess, pszLibFileRemote, (void *)moduleName, pszLibFileRemoteSize, NULL)) {
+		DWORD err = GetLastError();
+		currentLogger->LogError2(L"卸载模块失败：WriteProcessMemory 失败（错误码 %d）", err);
+		LogInjectErrorHint(err);
+		VirtualFreeEx(hProcess, pszLibFileRemote, 0, MEM_RELEASE);
+		CloseHandle(hProcess);
+		return FALSE;
+	}
 
-	DWORD dwHandle;
-	DWORD dwID;
+	DWORD dwHandle = 0;
+	DWORD dwID = 0;
 	LPVOID pFunc = GetProcAddress(GetModuleHandle(TEXT("Kernel32")), "GetModuleHandleW");
 	HANDLE hThread = CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)pFunc, pszLibFileRemote, 0, &dwID);
 	if (!hThread) {
-		currentLogger->LogError2(L"卸载病毒失败！创建远程线程失败：%d", GetLastError());
+		DWORD err = GetLastError();
+		currentLogger->LogError2(L"卸载模块失败：创建远程线程失败：%d", err);
+		LogInjectErrorHint(err);
+		VirtualFreeEx(hProcess, pszLibFileRemote, 0, MEM_RELEASE);
+		CloseHandle(hProcess);
 		return FALSE;
 	}
 
-	// 等待GetModuleHandle运行完毕
-	WaitForSingleObject(hThread, INFINITE);
-	// 获得GetModuleHandle的返回值
-	GetExitCodeThread(hThread, &dwHandle);
-	// 释放目标进程中申请的空间
-	VirtualFreeEx(hProcess, pszLibFileRemote, pszLibFileRemoteSize, MEM_DECOMMIT);
-	CloseHandle(hThread);
-	// 使目标进程调用FreeLibrary，卸载DLL
-	pFunc = GetProcAddress(GetModuleHandle(TEXT("Kernel32")), "FreeLibrary"); ;
-	hThread = CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)pFunc, (LPVOID)dwHandle, 0, &dwID);
-	if (!hThread) {
-		currentLogger->LogError2(L"卸载病毒失败！创建远程线程失败：%d", GetLastError());
+	// 等待GetModuleHandle运行完毕（带超时，避免无期限挂起）
+	if (WaitForSingleObject(hThread, 10000) != WAIT_OBJECT_0) {
+		currentLogger->LogError2(L"卸载模块失败：GetModuleHandleW 未在 10 秒内完成");
+		CloseHandle(hThread);
+		VirtualFreeEx(hProcess, pszLibFileRemote, 0, MEM_RELEASE);
+		CloseHandle(hProcess);
 		return FALSE;
 	}
-	
-	// 等待FreeLibrary卸载完毕
-	WaitForSingleObject(hThread, INFINITE);
+	// 获得GetModuleHandle的返回值
+	GetExitCodeThread(hThread, &dwHandle);
+	CloseHandle(hThread);
+	// 释放目标进程中申请的空间
+	VirtualFreeEx(hProcess, pszLibFileRemote, 0, MEM_RELEASE);
+
+	// 使目标进程调用FreeLibrary，卸载DLL
+	pFunc = GetProcAddress(GetModuleHandle(TEXT("Kernel32")), "FreeLibrary");
+	hThread = CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)pFunc, (LPVOID)dwHandle, 0, &dwID);
+	if (!hThread) {
+		DWORD err = GetLastError();
+		currentLogger->LogError2(L"卸载模块失败：创建远程线程失败：%d", err);
+		LogInjectErrorHint(err);
+		CloseHandle(hProcess);
+		return FALSE;
+	}
+
+	// 等待FreeLibrary卸载完毕（带超时）
+	BOOL unloaded = (WaitForSingleObject(hThread, 10000) == WAIT_OBJECT_0);
 	CloseHandle(hThread);
 	CloseHandle(hProcess);
 
-	return true;
+	if (!unloaded)
+		currentLogger->LogError2(L"卸载模块失败：FreeLibrary 未在 10 秒内完成");
+
+	return unloaded;
 }
 bool TrainerWorkerInternal::UnloadHookDll()
 {
 	if (_MasterHelperPid > 4) {
 		if (UnInjectDll(_MasterHelperPid, L"JiYuTrainerHooks.dll"))
-			currentLogger->Log(L"已强制卸载 MasterHelper 病毒");
+			currentLogger->Log(L"已强制卸载 MasterHelper 注入模块");
 		//KillProcess(_MasterHelperPid, false);
 	}
 	if (_StudentMainPid > 4)
 		if (UnInjectDll(_StudentMainPid, L"JiYuTrainerHooks.dll"))
-			currentLogger->Log(L"已强制卸载 StudentMain 病毒");
+			currentLogger->Log(L"已强制卸载 StudentMain 注入模块");
 
 	return false;
 }
