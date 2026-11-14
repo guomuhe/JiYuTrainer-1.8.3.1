@@ -12,6 +12,7 @@
 #include "RegHlp.h"
 #include "TxtUtils.h"
 #include "XUnzip.h"
+#include <VersionHelpers.h>
 #include <Shlwapi.h>
 #include <winioctl.h>
 #include <CommCtrl.h>
@@ -658,6 +659,19 @@ LPVOID JTAppInternal::RunOperation(AppOperation op)
 
 void JTAppInternal::LoadDriver()
 {
+	//=====================================================================
+	//F-07：Win10+ 默认不加载内核驱动
+	//驱动内的自我保护/强杀能力依赖未文档化机制，在 PatchGuard / HVCI / VBS
+	//环境下可能加载失败甚至导致蓝屏。默认降级为纯用户层工作。
+	//如确需在已授权的隔离测试环境验证，请在 INI 中显式设置：
+	//  [JTSettings]
+	//  EnableDriverOnModernWindows=true
+	//=====================================================================
+	if (IsWindows10OrGreater() && !appSetting->GetSettingBool(L"EnableDriverOnModernWindows", false)) {
+		currentLogger->LogWarn(L"当前系统为 Windows 10 或更高版本，默认不加载内核驱动（EnableDriverOnModernWindows=false）");
+		return;
+	}
+
 	if (!appForceNoDriver && XLoadDriver())
 		if (!appForceNoSelfProtect && !XInitSelfProtect())
 			currentLogger->LogWarn(L"驱动自我保护失败！");

@@ -80,6 +80,9 @@ private:
 	int saningIPsWorkingThread = 0;
 
 public:
+	//F-08: UDP 远程指令（命令/信息/关机/重启）默认关闭。
+	//仅限授权测试环境：只能对本人拥有或已获书面授权的设备使用。
+	bool enableRemoteCmd = false;
 
 	HWND saningIPsReceivehWnd = nullptr;
 	HWND checkStudentMainTCPPortReceivehhWnd = nullptr;
@@ -90,17 +93,17 @@ public:
 
 	static JyUdpAttack* currentJyUdpAttack;
 
-	//ɨ�������IP
+	//扫描局域网IP
 	void ScanNetworkIP(HWND hWnd, std::wstring &start, std::wstring &end, std::wstring& host, std::wstring& current);
-	//��⼫���TCP�˿�
+	//检测极域的TCP端口
 	void CheckStudentMainTCPPort(HWND hWnd);
-	//����cmd
+	//发送cmd
 	void SendCommand(std::wstring& ip, DWORD port, std::wstring& cmd);
-	//������Ϣ
+	//发送信息
 	void SendText(std::wstring& ip, DWORD port, std::wstring& cmd);
-	//���͹ػ�ָ��
+	//发送关机指令
 	void SendShutdown(std::wstring& ip, DWORD port);
-	//��������ָ��
+	//发送重启指令
 	void SendReboot(std::wstring& ip, DWORD port);
 
 private:

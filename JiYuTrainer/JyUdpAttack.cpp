@@ -53,6 +53,10 @@ void JyUdpAttack::CheckStudentMainTCPPort(HWND hWnd)
 }
 void JyUdpAttack::SendCommand(std::wstring& ip, DWORD port, std::wstring& cmd)
 {
+    if (!enableRemoteCmd) {
+        OutputDebugString(L"UDP SendCommand 已被禁用（enableRemoteCmd=false）\n");
+        return;
+    }
     SendTask* task = new SendTask();
     task->cmdString = FormatString(L"[%s:%d] CMD => %s", ip.c_str(), port, cmd.c_str());
     task->ip = ip;
@@ -65,6 +69,10 @@ void JyUdpAttack::SendCommand(std::wstring& ip, DWORD port, std::wstring& cmd)
 }
 void JyUdpAttack::SendText(std::wstring& ip, DWORD port, std::wstring& cmd)
 {
+    if (!enableRemoteCmd) {
+        OutputDebugString(L"UDP SendText 已被禁用（enableRemoteCmd=false）\n");
+        return;
+    }
     SendTask* task = new SendTask();
     task->cmdString = FormatString(L"[%s:%d] MSG => %s", ip.c_str(), port, cmd.c_str());
     task->ip = ip;
@@ -77,6 +85,10 @@ void JyUdpAttack::SendText(std::wstring& ip, DWORD port, std::wstring& cmd)
 }
 void JyUdpAttack::SendShutdown(std::wstring& ip, DWORD port)
 {
+    if (!enableRemoteCmd) {
+        OutputDebugString(L"UDP SendShutdown 已被禁用（enableRemoteCmd=false）\n");
+        return;
+    }
     SendTask* task = new SendTask();
     task->cmdString = FormatString(L"[%s:%d] => shutdown", ip.c_str(), port);
     task->ip = ip;
@@ -88,6 +100,10 @@ void JyUdpAttack::SendShutdown(std::wstring& ip, DWORD port)
 }
 void JyUdpAttack::SendReboot(std::wstring& ip, DWORD port)
 {
+    if (!enableRemoteCmd) {
+        OutputDebugString(L"UDP SendReboot 已被禁用（enableRemoteCmd=false）\n");
+        return;
+    }
     SendTask* task = new SendTask();
     task->cmdString = FormatString(L"[%s:%d] => reboot", ip.c_str(), port);
     task->ip = ip;
