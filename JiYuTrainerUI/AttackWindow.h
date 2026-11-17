@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "stdafx.h"
 #include "sciter-x.h"
 #include "sciter-x-host-callback.h"

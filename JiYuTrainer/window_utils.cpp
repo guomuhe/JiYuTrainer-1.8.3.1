@@ -1,4 +1,4 @@
-// window_utils.cpp - 窗口工具 (MythwareHacker 移植)
+﻿// window_utils.cpp - 窗口工具 (MythwareHacker 移植)
 #include "window_utils.h"
 #include <psapi.h>
 

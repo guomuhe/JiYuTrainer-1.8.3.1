@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "ConfigWindow.h"
 #include "../JiYuTrainer/AppPublic.h"
 #include "../JiYuTrainer/StringHlp.h"

@@ -1,4 +1,4 @@
-// window_utils.h - 窗口工具 (MythwareHacker 移植)
+﻿// window_utils.h - 窗口工具 (MythwareHacker 移植)
 #pragma once
 #include <windows.h>
 #include <string>

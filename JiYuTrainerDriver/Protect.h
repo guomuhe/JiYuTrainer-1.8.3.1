@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Driver.h"
 
 #define PROCESS_TERMINATE         0x0001  

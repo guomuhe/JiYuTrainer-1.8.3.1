@@ -1,4 +1,4 @@
-#include "KernelUtils.h"
+﻿#include "KernelUtils.h"
 #include "KernelUtils.h"
 #include "stdafx.h"
 #include "JiYuTrainer.h"

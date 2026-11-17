@@ -1,4 +1,4 @@
-// inject.cpp - 跨进程 DLL 注入 + 远程调用 (简化版, 同架构 only)
+﻿// inject.cpp - 跨进程 DLL 注入 + 远程调用 (简化版, 同架构 only)
 #include "inject.h"
 #include "MythwareCompat.h"
 #include <tlhelp32.h>

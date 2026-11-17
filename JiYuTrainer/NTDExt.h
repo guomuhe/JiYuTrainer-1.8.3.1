@@ -1,4 +1,4 @@
-// NTDExt.h - NoTopDomain 功能移植模块
+﻿// NTDExt.h - NoTopDomain 功能移植模块
 // 集成所有 NoTopDomain 独有的反极域功能到 JiYuTrainer
 
 #pragma once

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "TrainerWorker.h"
 #include "JiYuTrainer.h"
 #include "AppPublic.h"

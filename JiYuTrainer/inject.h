@@ -1,4 +1,4 @@
-// inject.h - 跨进程 DLL 注入 + 远程调用 (MythwareHacker 移植, 简化版)
+﻿// inject.h - 跨进程 DLL 注入 + 远程调用 (MythwareHacker 移植, 简化版)
 // 只支持同架构 (32→32 或 64→64). JiYuTrainer 32-bit → StudentMain.exe 32-bit 完全覆盖
 #pragma once
 #include <windows.h>

@@ -1,4 +1,4 @@
-// NTDExt.cpp - NoTopDomain 功能移植模块实现
+﻿// NTDExt.cpp - NoTopDomain 功能移植模块实现
 // 移植自 NoTopDomain (Python+PyQt5) → JiYuTrainer (C++)
 
 #include "stdafx.h"

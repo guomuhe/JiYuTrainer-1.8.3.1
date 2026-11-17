@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "SysHlp.h"
 #include "NtHlp.h"
 #include "VersionHelpers.h"

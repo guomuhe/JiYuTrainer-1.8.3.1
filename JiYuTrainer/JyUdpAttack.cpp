@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "JyUdpAttack.h"
 #include "NetUtils.h"
 #include "Logger.h"

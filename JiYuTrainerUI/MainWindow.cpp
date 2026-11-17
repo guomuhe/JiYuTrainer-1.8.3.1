@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "MainWindow.h"
 #include "UpdaterWindow.h"
 #include "ConfigWindow.h"

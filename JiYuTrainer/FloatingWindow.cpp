@@ -1,4 +1,4 @@
-// FloatingWindow.cpp - 圆形悬浮窗 + 拾取覆盖模式
+﻿// FloatingWindow.cpp - 圆形悬浮窗 + 拾取覆盖模式
 // 正常模式：圆形图标，拖拽、左键切换主窗口、右键菜单
 // 拾取模式：全屏透明覆盖，用户点击目标窗口 → SetWindowDisplayAffinity
 #include "FloatingWindow.h"

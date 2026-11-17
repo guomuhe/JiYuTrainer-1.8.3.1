@@ -1,4 +1,4 @@
-// MythwareExt.cpp - 从 MythwareToolkit 移植的高级功能
+﻿// MythwareExt.cpp - 从 MythwareToolkit 移植的高级功能
 // ACL 防杀 / CBT hook 对话框防截屏 / 键鼠解锁 / 极域控制 / 网络限制解除
 #include "MythwareExt.h"
 #include <aclapi.h>

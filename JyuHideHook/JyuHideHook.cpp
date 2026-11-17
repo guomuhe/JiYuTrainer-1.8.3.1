@@ -1,4 +1,4 @@
-// JyuHideHook.cpp - 跨进程窗口隐蔽 DLL
+﻿// JyuHideHook.cpp - 跨进程窗口隐蔽 DLL
 // ============================================================
 // 融合: MythwareHacker (window_hide) + Injector-cap (InjectDLL)
 //

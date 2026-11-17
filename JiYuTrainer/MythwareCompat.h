@@ -1,4 +1,4 @@
-// MythwareCompat.h - MythwareHacker -> JiYuTrainer 兼容层
+﻿// MythwareCompat.h - MythwareHacker -> JiYuTrainer 兼容层
 // 提供 logger shim + WSTR 宏 + 最小 common.h 等价
 #pragma once
 #include <windows.h>
