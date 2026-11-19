@@ -142,7 +142,7 @@ IDR_DLL_HIDE_HOOK        BIN                     "..\\Release\\JyuHideHook.dll"
 
 #else
 
-IDR_DLL_DRIVER          BIN                     "..\\JiYuTrainerDriver\\Release\\JiYuTrainerDriver.sys"
+IDR_DLL_DRIVER          BIN                     "..\\Release\\JiYuTrainerDriver.sys"
 
 IDR_DLL_HOOKS           BIN                     "..\\Release\\JiYuTrainerHooks.dll"
 

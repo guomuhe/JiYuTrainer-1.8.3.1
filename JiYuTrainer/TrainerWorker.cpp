@@ -891,7 +891,8 @@ void TrainerWorkerInternal::UpdateState()
 bool TrainerWorkerInternal::InjectHookDll()
 {
 	//F-03: InjectMode=None 降级为仅 Ring3 能力（结束进程/监控），避免被安全软件反复拦截
-	if (setInjectMode == L"None") {
+	wstring injectMode = currentApp->GetSettings()->GetSettingStr(L"InjectMode", L"RemoteThread", MAX_PATH);
+	if (injectMode == L"None") {
 		static bool warned = false;
 		if (!warned) {
 			currentLogger->LogWarn(L"注入已被配置禁用（InjectMode=None），广播拦截等高级功能不可用");
