@@ -45,5 +45,5 @@ set_target_properties(JiYuTrainerHooks PROPERTIES
     SUFFIX ".dll"
 )
 
-# windres codepage: JiYuTrainerHooks.rc uses GBK-encoded Chinese strings
-set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} --codepage=936")
+# windres codepage: 已统一为 UTF-8 (65001)
+set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} --codepage=65001")

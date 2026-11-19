@@ -29,9 +29,16 @@ add_compile_options(
 # MSVC 安全函数兼容头 - 在每个 stdafx.h 里 #include <windows.h> 之后手工 include
 # （不能用 -include，因为 GWL_* 常量需要在 <windows.h> 处理完之后定义）
 
-# windres 资源编译选项：.rc 是 GBK 编码（简体中文 Windows 936）
+# 资源编译器编码：所有 .rc 已统一为 UTF-8 (+BOM)
 if(MINGW)
-    set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} --codepage=936")
+    set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} --codepage=65001")
+elseif(MSVC)
+    # MSVC rc.exe 看到 UTF-8 BOM 会自动按 UTF-8 解读，无需额外 flag
+endif()
+
+# MSVC 编译器强制 UTF-8 解读 .cpp/.h（防止无 BOM 源码变乱码）
+if(MSVC)
+    add_compile_options(/utf-8)
 endif()
 
 # 全局预处理器定义
