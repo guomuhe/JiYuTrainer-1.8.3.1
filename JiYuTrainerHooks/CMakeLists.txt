@@ -44,6 +44,3 @@ set_target_properties(JiYuTrainerHooks PROPERTIES
     PREFIX ""
     SUFFIX ".dll"
 )
-
-# windres codepage: 已统一为 UTF-8 (65001)
-set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} --codepage=65001")
