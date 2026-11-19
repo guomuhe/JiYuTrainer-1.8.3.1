@@ -14,3 +14,9 @@ set_target_properties(JyuHideHook PROPERTIES
     PREFIX ""
     SUFFIX ".dll"
 )
+
+# JiYuTrainer.rc 以 ..\Release\JyuHideHook.dll 内嵌该 DLL，构建后同步一份到 Release
+add_custom_command(TARGET JyuHideHook POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:JyuHideHook> ${CMAKE_SOURCE_DIR}/Release/JyuHideHook.dll
+)

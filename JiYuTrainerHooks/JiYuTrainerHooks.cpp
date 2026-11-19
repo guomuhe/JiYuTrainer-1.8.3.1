@@ -1000,7 +1000,7 @@ void VInstallHooks(InjectionMode mode) {
 	faCallNextHookEx = (fnCallNextHookEx)GetProcAddress(hUser32, "CallNextHookEx");
 	faUnhookWindowsHookEx = (fnUnhookWindowsHookEx)GetProcAddress(hUser32, "UnhookWindowsHookEx");
 	faGetDesktopWindow = (fnGetDesktopWindow)GetProcAddress(hUser32, "GetDesktopWindow");
-	faGetWindowDC = (fnGetWindowDC)GetProcAddress(hUser32, "GetDesktopWindow");
+	faGetWindowDC = (fnGetWindowDC)GetProcAddress(hUser32, "GetWindowDC");
 	faGetForegroundWindow = (fnGetForegroundWindow)GetProcAddress(hUser32, "GetForegroundWindow");
 	faEnableMenuItem = (fnEnableMenuItem)GetProcAddress(hUser32, "EnableMenuItem");
 	faSetClassLongA = (fnSetClassLongA)GetProcAddress(hUser32, "SetClassLongA");

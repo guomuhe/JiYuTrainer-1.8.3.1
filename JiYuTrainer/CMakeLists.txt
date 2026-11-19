@@ -35,6 +35,9 @@ set(MAIN_SOURCES
 
 add_executable(JiYuTrainer WIN32 ${MAIN_SOURCES})
 
+# rc 内嵌 ..\Release\JyuHideHook.dll，需先构建出该 DLL
+add_dependencies(JiYuTrainer JyuHideHook)
+
 target_include_directories(JiYuTrainer PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../JiYuTrainerUI

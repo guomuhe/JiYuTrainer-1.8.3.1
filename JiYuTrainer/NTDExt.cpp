@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "NTDExt.h"
+#include "inject.h"
 #include <tlhelp32.h>
 #include <string>
 #include <vector>
@@ -589,24 +590,88 @@ bool SetWindowTop(HWND hwnd, bool topmost)
     return success == TRUE;
 }
 
+// 给任意窗口应用 WDA
+// 注意: SetWindowDisplayAffinity 只允许操作本进程的窗口，跨进程调用会失败(ERROR_ACCESS_DENIED)，
+//       所以对其它进程的窗口必须注入 JyuHideHook.dll，在其进程内调用 RemoteSetAffinity
+static bool ApplyWindowDisplayAffinity(HWND hwnd, DWORD affinity)
+{
+    if (!IsWindow(hwnd)) return false;
+
+    DWORD pid = 0;
+    GetWindowThreadProcessId(hwnd, &pid);
+    if (pid == GetCurrentProcessId())
+        return SetWindowDisplayAffinity(hwnd, affinity) == TRUE;
+
+    // JyuHideHook.dll 与本程序同目录
+    wchar_t exePath[MAX_PATH] = {};
+    if (!GetModuleFileNameW(nullptr, exePath, MAX_PATH)) return false;
+    std::wstring dllPath(exePath);
+    size_t sep = dllPath.find_last_of(L'\\');
+    if (sep == std::wstring::npos) return false;
+    dllPath = dllPath.substr(0, sep + 1) + L"JyuHideHook.dll";
+    if (GetFileAttributesW(dllPath.c_str()) == INVALID_FILE_ATTRIBUTES)
+    {
+        LogMessage(L"[hide] 缺少 JyuHideHook.dll，无法跨进程设置防截屏");
+        return false;
+    }
+
+    struct AffinityParam { HWND hwnd; DWORD affinity; } param = { hwnd, affinity };
+    auto r = inject::InjectAndCall(hwnd, dllPath, "RemoteSetAffinity", &param, sizeof(param));
+    if (!r.success)
+    {
+        LogMessage((L"[hide] 注入失败: " + r.error).c_str());
+        return false;
+    }
+    return r.exitCode == 0;  // RemoteSetAffinity 返回 0 表示成功
+}
+
+// 已由本程序隐藏的窗口（跨进程查询 WDA 不可靠，用本地记录兜底）
+static std::vector<HWND> g_hiddenWindows;
+
+static bool IsMarkedHidden(HWND hwnd)
+{
+    for (HWND h : g_hiddenWindows)
+        if (h == hwnd && IsWindow(h)) return true;
+    return false;
+}
+
+static void MarkHidden(HWND hwnd, bool hidden)
+{
+    for (size_t i = 0; i < g_hiddenWindows.size(); ++i)
+    {
+        if (g_hiddenWindows[i] == hwnd)
+        {
+            if (!hidden) g_hiddenWindows.erase(g_hiddenWindows.begin() + i);
+            return;
+        }
+    }
+    if (hidden) g_hiddenWindows.push_back(hwnd);
+}
+
 bool ToggleForegroundWindowHide()
 {
     HWND hwnd = GetForegroundWindow();
     if (!hwnd) return false;
-    
+
     // 检查当前的 WDA 设置
-    DWORD currentAffinity = 0;
-    if (GetWindowDisplayAffinity(hwnd, &currentAffinity))
+    DWORD currentAffinity = WDA_NONE;
+    bool covered = GetWindowDisplayAffinity(hwnd, &currentAffinity) &&
+                   currentAffinity != WDA_NONE;
+    bool hidden = covered || IsMarkedHidden(hwnd);
+
+    if (hidden)
     {
-        if (currentAffinity & WDA_EXCLUDEFROMCAPTURE)
-            SetWindowDisplayAffinity(hwnd, WDA_NONE);
-        else
-        {
-            // Win10 2004+ 用 EXCLUDEFROMCAPTURE，老版本回退到 MONITOR
-            SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE);
-        }
+        bool ok = ApplyWindowDisplayAffinity(hwnd, WDA_NONE);
+        if (ok) MarkHidden(hwnd, false);
+        return ok;
     }
-    return true;
+
+    // Win10 2004+ 用 EXCLUDEFROMCAPTURE（窗口从截屏中完全移除）
+    // 老系统不支持该值，回退 WDA_MONITOR（截屏中该窗口变黑）
+    bool ok = ApplyWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE) ||
+              ApplyWindowDisplayAffinity(hwnd, WDA_MONITOR);
+    if (ok) MarkHidden(hwnd, true);
+    return ok;
 }
 
 bool ToggleForegroundWindowTop()
