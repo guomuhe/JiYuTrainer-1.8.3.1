@@ -14,6 +14,7 @@
 #include "../JiYuTrainer/SysHlp.h"
 #include "../JiYuTrainer/PathHelper.h"
 #include "../JiYuTrainerUpdater/JiYuTrainerUpdater.h"
+#include <shellapi.h>
 
 using namespace std;
 
@@ -156,57 +157,29 @@ int screenWidth, screenHeight;
 
 MainWindow::MainWindow()
 {
-	// 日志写到 %TEMP% 目录，保持 exe 目录干净
-	wchar_t mwlogpath[MAX_PATH];
-	swprintf_s(mwlogpath, L"%sjt_mw.log", SysHlp::GetTempPath());
-	FILE* lf = NULL;
-	_wfopen_s(&lf, mwlogpath, L"w");
-	auto L = [&](const char* s) { if (lf) { fprintf(lf, "MW: %s\n", s); fflush(lf); } };
-
-	L("ctor start");
 	currentLogger = currentApp->GetLogger();
-	L("after GetLogger");
 
 	asset_add_ref();
-	L("after asset_add_ref");
 	swprintf_s(wndClassName, MAIN_WND_CLS_NAME);
-	L("after swprintf wndClassName");
 
-	if (!initClass()) { L("initClass FAILED"); }
-	else L("after initClass OK");
+	initClass();
 
 	screenWidth = GetSystemMetrics(SM_CXSCREEN);
 	screenHeight = GetSystemMetrics(SM_CYSCREEN);
-	L("after GetSystemMetrics");
 
 	hWndMain = CreateWindow(wndClassName, MAIN_WND_NAME, WS_POPUP, 0, 0, 430, 520, NULL, NULL, currentApp->GetInstance(), this);
-	L(hWndMain ? "after CreateWindow OK" : "after CreateWindow FAILED");
-
-	if (!hWndMain) { if(lf)fclose(lf); return; }
+	if (!hWndMain) return;
 
 	_hWnd = hWndMain;
-	L("before init()");
 
 	init();
-	L("after init()");
 
-	// ShowWindow/UpdateWindow trigger WM messages that go through WndProc
-	// which calls sciter APIs - these might be the crash source
-#if 1
-	// Try ShowWindow first; if crash, revert to #if 0
-	if (currentApp->GetAppIsHiddenMode()) 
+	if (currentApp->GetAppIsHiddenMode())
 		ShowWindow(_hWnd, SW_SHOW);
-	else 
+	else
 		ShowWindow(_hWnd, currentApp->GetAppShowCmd());
-	L("after ShowWindow");
 
 	UpdateWindow(_hWnd);
-	L("after UpdateWindow");
-#else
-	L("SKIP: ShowWindow/UpdateWindow");
-#endif
-	L("ctor COMPLETE (with skips)");
-	if(lf) fclose(lf);
 }
 MainWindow::~MainWindow()
 {
@@ -248,41 +221,25 @@ MainWindow* MainWindow::ptr(HWND hwnd)
 }
 bool MainWindow::init()
 {
-	// 日志写到 %TEMP% 目录，保持 exe 目录干净
-	wchar_t mwlogpath2[MAX_PATH];
-	swprintf_s(mwlogpath2, L"%sjt_mw.log", SysHlp::GetTempPath());
-	FILE* lf = NULL;
-	_wfopen_s(&lf, mwlogpath2, L"w");
-	auto L = [&](const char* s) { if (lf) { fprintf(lf, "MW::init: %s\n", s); fflush(lf); } };
-
-	L("enter");
 	SciterSetOption(_hWnd, SCITER_ALPHA_WINDOW, TRUE);
-	L("OK: SciterSetOption ALPHA");
 
 	SetWindowLongPtr(_hWnd, GWLP_USERDATA, LONG_PTR(this));
-	L("OK: SetWindowLongPtr");
 
 	setup_callback();
-	L("OK: setup_callback");
 
 	attach_dom_event_handler(_hWnd, this);
-	L("OK: attach_dom_event_handler");
 
 	// LoadSettings - loads ini file, safe
 	LoadSettings();
-	L("OK: LoadSettings");
 
 	currentLogger = currentApp->GetLogger();
 	currentLogger->SetLogOutPut(LogOutPutCallback);
 	currentLogger->SetLogOutPutCallback(LogCallBack, (LPARAM)this);
-	L("OK: SetLogOutPut");
 
 	currentWorker = currentApp->GetTrainerWorker();
 	currentWorker->SetUpdateInfoCallback(this);
-	L("OK: SetUpdateInfoCallback");
 
 	currentApp->LoadDriver();
-	L("OK: LoadDriver");
 
 	BOOL result = FALSE;
 	HRSRC hResource = FindResource(currentApp->GetInstance(), MAKEINTRESOURCE(IDR_HTML_MAIN), RT_HTML);
@@ -295,7 +252,6 @@ bool MainWindow::init()
 		}
 	}
 
-	if (lf) fclose(lf);
 	return TRUE;
 }
 sciter::value MainWindow::inspectorIsPresent()
@@ -594,6 +550,20 @@ void MainWindow::OnRunCmd(LPCWSTR cmd)
 		else if (cmd == L"inspector") sciter::dom::element(get_root()).call_function("runInspector");
 		else if (cmd == L"whereisi") {
 			currentLogger->Log(L"本程序路径是：%s", currentApp->GetFullPath());
+		}
+		else if (cmd == L"selfcheck") {
+			std::wstring path;
+			if (mythware_ext::WriteSelfCheckReport(&path))
+				currentLogger->Log(L"[能力自检] 报告已写入：%s", path.c_str());
+			else
+				currentLogger->LogError(L"[能力自检] 报告写入失败");
+		}
+		else if (cmd == L"diag") {
+			std::wstring dir;
+			if (mythware_ext::ExportDiagnosticBundle(dir))
+				currentLogger->Log(L"[诊断包] 已导出到：%s", dir.c_str());
+			else
+				currentLogger->LogError(L"[诊断包] 导出失败");
 		}
 		else if (cmd == L"testupdate") {
 			UpdaterWindow u(_hWnd);
@@ -947,16 +917,57 @@ bool MainWindow::on_event(HELEMENT he, HELEMENT target, BEHAVIOR_EVENTS type, UI
 				}
 			}
 		else if (ele.get_attribute("id") == L"btn_unblock") {
-				if (currentWorker) {
-					currentWorker->RunOperation(TrainerWorkerOpClearKeyMouseLock);
+				std::wstring report;
+				bool allOk = mythware_ext::DetachAll(&report);
+				currentLogger->Log(L"[一键脱控] %s", allOk ? L"全部成功" : L"部分失败");
+				MessageBox(_hWnd, report.c_str(), allOk ? L"JiYuTrainer - 一键脱控（全部成功）" : L"JiYuTrainer - 一键脱控（部分失败）", MB_ICONINFORMATION);
+			}
+		else if (ele.get_attribute("id") == L"btn_restore_all") {
+				if (MessageBox(_hWnd, L"确定要恢复所有被解除的限制吗？\n（恢复远程关机 / U盘限制 / 网站限制 / 停止键鼠解锁 / 关闭防杀与通信阻断）", L"JiYuTrainer - 一键恢复", MB_YESNO | MB_ICONQUESTION) == IDYES) {
+					std::wstring report;
+					bool allOk = mythware_ext::RestoreAll(&report);
+					currentLogger->Log(L"[一键恢复] %s", allOk ? L"全部成功" : L"部分失败");
+					MessageBox(_hWnd, report.c_str(), allOk ? L"JiYuTrainer - 一键恢复（全部成功）" : L"JiYuTrainer - 一键恢复（部分失败）", MB_ICONINFORMATION);
 				}
-				OnRunCmd(L"unload_netfilter");
-				OnRunCmd(L"stop_tdff");
-				OnRunCmd(L"stop_tdnf");
-				OnRunCmd(L"clear_gp");
-				OnRunCmd(L"clear_ifeo");
-				OnRunCmd(L"unlock_antikill");
-				ShowFastTip(L"<h4>已一键解除所有限制</h4>");
+			}
+		else if (ele.get_attribute("id") == L"btn_teacher_block") {
+				bool cur = currentApp->GetSettings()->GetSettingBool(L"TeacherBlock", false);
+				bool next = !cur;
+				bool ok = mythware_ext::SetTeacherCommBlock(next);
+				if (ok) {
+					currentApp->GetSettings()->SetSettingBool(L"TeacherBlock", next);
+					ShowFastTip(next ? L"<h4>已阻断教师端通信（仅本机 UDP 4700-4720 出站规则）</h4>"
+									 : L"<h4>已恢复与教师端的通信</h4>");
+				} else {
+					MessageBox(_hWnd, next ? L"阻断失败：需要管理员权限，且系统防火墙服务需正常运行。"
+										   : L"恢复失败：需要管理员权限。",
+							   L"JiYuTrainer - 教师端通信阻断", MB_ICONWARNING);
+				}
+			}
+		else if (ele.get_attribute("id") == L"btn_broadcast_auto") {
+				int cur = currentApp->GetSettings()->GetSettingInt(L"BroadcastAutoMode", 0);
+				int next = (cur + 1) % 3;
+				currentApp->GetSettings()->SetSettingInt(L"BroadcastAutoMode", next);
+				const wchar_t* name = next == 0 ? L"关闭" : (next == 1 ? L"自动窗口化" : L"自动全屏化");
+				wchar_t tip[128] = {};
+				swprintf_s(tip, L"<h4>广播窗口自动策略：%s</h4>", name);
+				ShowFastTip(tip);
+			}
+		else if (ele.get_attribute("id") == L"btn_selfcheck") {
+				std::wstring path;
+				std::wstring report = mythware_ext::BuildCapabilityReport();
+				if (mythware_ext::WriteSelfCheckReport(&path))
+					report += L"\r\n报告已保存到：\r\n" + path;
+				MessageBox(_hWnd, report.c_str(), L"JiYuTrainer - 能力自检", MB_ICONINFORMATION);
+			}
+		else if (ele.get_attribute("id") == L"btn_diag") {
+				std::wstring dir;
+				if (mythware_ext::ExportDiagnosticBundle(dir)) {
+					MessageBox(_hWnd, (L"诊断包已导出到：\r\n" + dir).c_str(), L"JiYuTrainer - 诊断包", MB_ICONINFORMATION);
+					ShellExecuteW(_hWnd, L"open", dir.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+				} else {
+					MessageBox(_hWnd, L"诊断包导出失败，请检查权限或临时目录。", L"JiYuTrainer - 诊断包", MB_ICONWARNING);
+				}
 			}
 		else if (ele.get_attribute("id") == L"btn_input_unlock") {
 				if (mythware_ext::IsInputUnlockRunning()) {

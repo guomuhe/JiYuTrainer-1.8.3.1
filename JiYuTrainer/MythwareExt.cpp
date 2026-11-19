@@ -1,10 +1,13 @@
 ﻿// MythwareExt.cpp - 从 MythwareToolkit 移植的高级功能
 // ACL 防杀 / CBT hook 对话框防截屏 / 键鼠解锁 / 极域控制 / 网络限制解除
 #include "MythwareExt.h"
+#include "NTDExt.h"
 #include <aclapi.h>
 #include <tlhelp32.h>
 #include <string>
 #include <vector>
+#include <cstdio>
+#include <cstdarg>
 
 namespace mythware_ext {
 
@@ -191,6 +194,42 @@ void StopInputUnlock() {
 bool IsInputUnlockRunning() { return g_inputUnlockRunning; }
 
 // ============================================================
+//  进程白名单（防止误杀系统关键进程）
+// ============================================================
+static const wchar_t* g_protectedNames[] = {
+	L"System", L"Idle", L"smss.exe", L"csrss.exe", L"wininit.exe",
+	L"winlogon.exe", L"services.exe", L"lsass.exe", L"lsaiso.exe",
+	L"svchost.exe", L"dwm.exe", L"explorer.exe", L"fontdrvhost.exe",
+	L"spoolsv.exe", L"audiodg.exe", L"taskhostw.exe", L"sihost.exe",
+	L"RuntimeBroker.exe", L"SearchHost.exe", L"StartMenuExperienceHost.exe",
+	L"TextInputHost.exe", L"ctfmon.exe", L"SecurityHealthService.exe",
+	L"MsMpEng.exe", L"JiYuTrainer.exe", nullptr
+};
+
+bool IsProtectedProcessName(const wchar_t* name) {
+	if (!name || !*name) return false;
+	for (int i = 0; g_protectedNames[i]; i++)
+		if (_wcsicmp(g_protectedNames[i], name) == 0) return true;
+	return false;
+}
+
+static std::wstring ProcessImageName(DWORD pid) {
+	wchar_t buf[MAX_PATH] = {};
+	DWORD size = MAX_PATH;
+	HANDLE h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+	if (!h) return L"";
+	QueryFullProcessImageNameW(h, 0, buf, &size);
+	CloseHandle(h);
+	std::wstring s(buf);
+	size_t p = s.find_last_of(L"\\/");
+	return p == std::wstring::npos ? s : s.substr(p + 1);
+}
+
+static bool IsProtectedPid(DWORD pid) {
+	return IsProtectedProcessName(ProcessImageName(pid).c_str());
+}
+
+// ============================================================
 //  进程查找/查杀
 // ============================================================
 DWORD FindProcessByName(const wchar_t* name) {
@@ -208,6 +247,7 @@ DWORD FindProcessByName(const wchar_t* name) {
 }
 
 bool KillProcessById(DWORD pid, bool force) {
+	if (IsProtectedPid(pid)) return false;   // 白名单：系统关键进程/自身不杀
 	if (force) {
 		HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, pid);
 		if (hSnap == INVALID_HANDLE_VALUE) return false;
@@ -231,6 +271,7 @@ bool KillProcessById(DWORD pid, bool force) {
 }
 
 bool KillAllWithName(const wchar_t* name, bool force) {
+	if (IsProtectedProcessName(name)) return false;   // 白名单
 	PROCESSENTRY32W pe = {}; pe.dwSize = sizeof(pe);
 	HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 	bool r = false;
@@ -295,6 +336,23 @@ bool ToggleBroadcastWindow() {
 	if (!hBd) return false;
 	// 广播窗口里的"窗口化/全屏化"按钮是 ID 1004 的 BM_CLICK
 	PostMessageW(hBd, WM_COMMAND, MAKEWPARAM(1004, BM_CLICK), 0);
+	return true;
+}
+
+bool ApplyBroadcastPolicy(bool windowed, bool* found, bool* changed) {
+	HWND hBd = FindBroadcastWindow();
+	if (found) *found = (hBd != nullptr);
+	if (changed) *changed = false;
+	if (!hBd) return false;
+	RECT r = {};
+	GetWindowRect(hBd, &r);
+	int sw = GetSystemMetrics(SM_CXSCREEN), sh = GetSystemMetrics(SM_CYSCREEN);
+	bool isFull = (r.left <= 0 && r.top <= 0 && r.right >= sw && r.bottom >= sh);
+	if (isFull == windowed) {
+		// 当前全屏却要求窗口化，或当前窗口化却要求全屏 → 点击切换按钮
+		PostMessageW(hBd, WM_COMMAND, MAKEWPARAM(1004, BM_CLICK), 0);
+		if (changed) *changed = true;
+	}
 	return true;
 }
 
@@ -426,6 +484,347 @@ bool GetMythwarePassword(std::wstring& outPassword) {
 	// 转 wstring
 	outPassword.assign(pass.begin(), pass.end());
 	return true;
+}
+
+// ============================================================
+//  教师端通信阻断（仅本机端口规则）
+// ============================================================
+static std::wstring System32Path(const wchar_t* fileName) {
+	wchar_t dir[MAX_PATH] = {};
+	GetSystemDirectoryW(dir, MAX_PATH);
+	std::wstring p = dir;
+	if (!p.empty() && p.back() != L'\\') p += L'\\';
+	p += fileName;
+	return p;
+}
+
+static bool RunHiddenWait(const std::wstring& exe, const std::wstring& args, DWORD* exitCode = nullptr) {
+	std::vector<wchar_t> cmd(args.begin(), args.end());
+	cmd.push_back(0);
+	STARTUPINFOW si = { sizeof(si) };
+	si.dwFlags = STARTF_USESHOWWINDOW;
+	si.wShowWindow = SW_HIDE;
+	PROCESS_INFORMATION pi = {};
+	if (!CreateProcessW(exe.c_str(), cmd.data(), nullptr, nullptr, FALSE,
+	                    CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi))
+		return false;
+	WaitForSingleObject(pi.hProcess, 20000);
+	DWORD rc = 1;
+	GetExitCodeProcess(pi.hProcess, &rc);
+	CloseHandle(pi.hThread);
+	CloseHandle(pi.hProcess);
+	if (exitCode) *exitCode = rc;
+	return rc == 0;
+}
+
+bool SetTeacherCommBlock(bool enable) {
+	const wchar_t* kRule = L"JiYuTrainer_BlockTeacherUDP";
+	std::wstring args;
+	if (enable) {
+		args = std::wstring(L"advfirewall firewall add rule name=\"") + kRule +
+		       L"\" dir=out protocol=UDP localport=4700-4720 action=block profile=any";
+	} else {
+		args = std::wstring(L"advfirewall firewall delete rule name=\"") + kRule + L"\"";
+	}
+	return RunHiddenWait(System32Path(L"netsh.exe"), args);
+}
+
+// ============================================================
+//  能力自检 / 诊断包
+// ============================================================
+static bool TokenIsElevated() {
+	HANDLE hToken = nullptr;
+	if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken)) return false;
+	TOKEN_ELEVATION te = {};
+	DWORD sz = sizeof(te);
+	BOOL ok = GetTokenInformation(hToken, TokenElevation, &te, sz, &sz);
+	CloseHandle(hToken);
+	return ok && te.TokenIsElevated;
+}
+
+static bool OsIs64Bit() {
+	SYSTEM_INFO si = {};
+	GetNativeSystemInfo(&si);
+	return si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64;
+}
+
+static bool PidIs64Bit(DWORD pid) {
+	HANDLE h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+	if (!h) return false;
+	BOOL wow = FALSE;
+	BOOL ok = IsWow64Process(h, &wow);
+	CloseHandle(h);
+	return ok && OsIs64Bit() && !wow;
+}
+
+static std::wstring ServiceStateText(const wchar_t* name) {
+	SC_HANDLE sc = OpenSCManagerW(nullptr, nullptr, SC_MANAGER_CONNECT);
+	if (!sc) return L"无法访问服务管理器";
+	SC_HANDLE svc = OpenServiceW(sc, name, SERVICE_QUERY_STATUS);
+	std::wstring r;
+	if (!svc) {
+		r = (GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST) ? L"未安装" : L"打开失败";
+	} else {
+		SERVICE_STATUS ss = {};
+		if (QueryServiceStatus(svc, &ss)) {
+			switch (ss.dwCurrentState) {
+			case SERVICE_RUNNING: r = L"运行中"; break;
+			case SERVICE_STOPPED: r = L"已停止"; break;
+			case SERVICE_START_PENDING: r = L"正在启动"; break;
+			case SERVICE_STOP_PENDING: r = L"正在停止"; break;
+			default: r = L"其他状态"; break;
+			}
+		} else r = L"查询失败";
+		CloseServiceHandle(svc);
+	}
+	CloseServiceHandle(sc);
+	return r;
+}
+
+static std::wstring SelfDir() {
+	wchar_t p[MAX_PATH] = {};
+	GetModuleFileNameW(nullptr, p, MAX_PATH);
+	std::wstring s(p);
+	size_t sep = s.find_last_of(L'\\');
+	return sep == std::wstring::npos ? std::wstring() : s.substr(0, sep + 1);
+}
+
+static std::wstring FilePresence(const std::wstring& dir, const wchar_t* name) {
+	if (GetFileAttributesW((dir + name).c_str()) == INVALID_FILE_ATTRIBUTES) return L"缺失";
+	return L"存在";
+}
+
+static void Rep(std::wstring& s, const wchar_t* fmt, ...) {
+	wchar_t buf[2048];
+	va_list ap;
+	va_start(ap, fmt);
+	vswprintf_s(buf, 2048, fmt, ap);
+	va_end(ap);
+	s += buf;
+}
+
+// 以 UTF-8(含 BOM) 写文本文件，避免依赖 _wfopen_s 的 ccs 扩展模式
+static bool WriteTextUtf8(const std::wstring& path, const std::wstring& text) {
+	HANDLE hf = CreateFileW(path.c_str(), GENERIC_WRITE, 0, nullptr,
+	                        CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+	if (hf == INVALID_HANDLE_VALUE) return false;
+	const unsigned char bom[3] = { 0xEF, 0xBB, 0xBF };
+	DWORD written = 0;
+	WriteFile(hf, bom, 3, &written, nullptr);
+	int need = WideCharToMultiByte(CP_UTF8, 0, text.c_str(), (int)text.size(),
+	                               nullptr, 0, nullptr, nullptr);
+	if (need > 0) {
+		std::string utf8(need, '\0');
+		WideCharToMultiByte(CP_UTF8, 0, text.c_str(), (int)text.size(),
+		                    &utf8[0], need, nullptr, nullptr);
+		WriteFile(hf, utf8.data(), (DWORD)utf8.size(), &written, nullptr);
+	}
+	CloseHandle(hf);
+	return true;
+}
+
+std::wstring BuildCapabilityReport() {
+	std::wstring r;
+	SYSTEMTIME st = {};
+	GetLocalTime(&st);
+	Rep(r, L"JiYuTrainer 能力自检报告\r\n");
+	Rep(r, L"时间: %04d-%02d-%02d %02d:%02d:%02d\r\n\r\n",
+	    st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+
+	Rep(r, L"[运行环境]\r\n");
+	Rep(r, L"  运行身份: %s\r\n", TokenIsElevated() ? L"管理员（已提权）" : L"普通用户（未提权，注入/驱动会失败）");
+	Rep(r, L"  系统位数: %s；本程序位数: %s\r\n",
+	    OsIs64Bit() ? L"64 位" : L"32 位", sizeof(void*) == 8 ? L"64 位" : L"32 位");
+
+	Rep(r, L"\r\n[极域学生端]\r\n");
+	DWORD pid = FindProcessByName(L"StudentMain.exe");
+	if (!pid) pid = FindProcessByName(L"StudentM.exe");
+	if (!pid) pid = FindProcessByName(L"StudentMain64.exe");
+	if (pid) {
+		Rep(r, L"  进程: 运行中  PID=%lu  镜像=%s  位数=%s\r\n", pid,
+		    ProcessImageName(pid).c_str(), PidIs64Bit(pid) ? L"64 位" : L"32 位");
+		if (PidIs64Bit(pid) && sizeof(void*) == 4)
+			Rep(r, L"  注入: 需要 JyuInject64.exe（32 位主程序无法直接注入 64 位目标）\r\n");
+	} else {
+		Rep(r, L"  进程: 未运行\r\n");
+	}
+
+	Rep(r, L"\r\n[注入依赖]\r\n");
+	std::wstring dir = SelfDir();
+	Rep(r, L"  JyuHideHook.dll      : %s\r\n", FilePresence(dir, L"JyuHideHook.dll").c_str());
+	Rep(r, L"  JyuHideHook64.dll    : %s\r\n", FilePresence(dir, L"JyuHideHook64.dll").c_str());
+	Rep(r, L"  JyuInject64.exe      : %s\r\n", FilePresence(dir, L"JyuInject64.exe").c_str());
+	Rep(r, L"  KernelCallbackCleaner: %s\r\n", FilePresence(dir, L"KernelCallbackCleaner.exe").c_str());
+	Rep(r, L"  RTCore64.sys         : %s\r\n", FilePresence(dir, L"RTCore64.sys").c_str());
+	Rep(r, L"  JiYuTrainerDriver.sys: %s\r\n", FilePresence(dir, L"JiYuTrainerDriver.sys").c_str());
+
+	Rep(r, L"\r\n[内核与限制]\r\n");
+	Rep(r, L"  服务 TDNetFilter : %s\r\n", ServiceStateText(L"TDNetFilter").c_str());
+	Rep(r, L"  服务 TDFileFilter: %s\r\n", ServiceStateText(L"TDFileFilter").c_str());
+	HANDLE hDev = CreateFileW(L"\\\\.\\TDNetFilter", GENERIC_READ | GENERIC_WRITE,
+	                          FILE_SHARE_READ, nullptr, OPEN_EXISTING, 0, nullptr);
+	if (hDev != INVALID_HANDLE_VALUE) { Rep(r, L"  TDNetFilter 设备: 可访问\r\n"); CloseHandle(hDev); }
+	else Rep(r, L"  TDNetFilter 设备: 不可访问 (err=%lu)\r\n", GetLastError());
+
+	Rep(r, L"\r\n[本程序状态]\r\n");
+	Rep(r, L"  键鼠解锁线程: %s\r\n", IsInputUnlockRunning() ? L"运行中" : L"未启动");
+	Rep(r, L"  进程防杀(ACL): %s\r\n", g_bProcessProtected ? L"已开启" : L"未开启");
+	Rep(r, L"  教师端通信阻断: %s\r\n", L"可在扩展区手动开关（netsh 本机端口规则）");
+	return r;
+}
+
+bool WriteSelfCheckReport(std::wstring* outPath) {
+	wchar_t tmp[MAX_PATH] = {};
+	GetTempPathW(MAX_PATH, tmp);
+	std::wstring p = std::wstring(tmp) + L"JiYuTrainer-selfcheck.txt";
+	if (!WriteTextUtf8(p, BuildCapabilityReport())) return false;
+	if (outPath) *outPath = p;
+	return true;
+}
+
+bool ExportDiagnosticBundle(std::wstring& outDirPath) {
+	SYSTEMTIME st = {};
+	GetLocalTime(&st);
+	wchar_t tmp[MAX_PATH] = {};
+	GetTempPathW(MAX_PATH, tmp);
+	wchar_t dir[MAX_PATH] = {};
+	swprintf_s(dir, L"%sJiYuTrainer-diag-%04d%02d%02d-%02d%02d%02d",
+	           tmp, st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+	if (!CreateDirectoryW(dir, nullptr)) return false;
+	outDirPath = dir;
+
+	// 1) 能力报告
+	WriteTextUtf8(outDirPath + L"\\capability.txt", BuildCapabilityReport());
+
+	// 2) 应用日志（程序目录 + 临时目录中的 *.log）
+	auto copyLogs = [&](const std::wstring& srcDir) {
+		WIN32_FIND_DATAW fd = {};
+		HANDLE hFind = FindFirstFileW((srcDir + L"*.log").c_str(), &fd);
+		if (hFind == INVALID_HANDLE_VALUE) return;
+		do {
+			if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
+			CopyFileW((srcDir + fd.cFileName).c_str(),
+			          (outDirPath + L"\\" + fd.cFileName).c_str(), FALSE);
+		} while (FindNextFileW(hFind, &fd));
+		FindClose(hFind);
+	};
+	copyLogs(SelfDir());
+	copyLogs(std::wstring(tmp));
+
+	// 3) 注册表备份（IFEO 与策略分支）
+	RunHiddenWait(System32Path(L"reg.exe"),
+		L"export \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\" \"" +
+		outDirPath + L"\\ifeo.reg\" /y");
+	RunHiddenWait(System32Path(L"reg.exe"),
+		L"export \"HKLM\\SOFTWARE\\Policies\" \"" + outDirPath + L"\\policies.reg\" /y");
+
+	// 4) 服务状态快照
+	std::wstring svc = L"TDNetFilter=" + ServiceStateText(L"TDNetFilter") +
+	                   L"\r\nTDFileFilter=" + ServiceStateText(L"TDFileFilter") + L"\r\n";
+	WriteTextUtf8(outDirPath + L"\\services.txt", svc);
+	return true;
+}
+
+// ============================================================
+//  一键脱控 / 一键恢复
+// ============================================================
+static std::wstring JiyuStudentDir() {
+	DWORD pid = FindMythwarePid();
+	if (!pid) return L"";
+	HANDLE h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+	if (!h) return L"";
+	wchar_t buf[MAX_PATH] = {};
+	DWORD size = MAX_PATH;
+	QueryFullProcessImageNameW(h, 0, buf, &size);
+	CloseHandle(h);
+	std::wstring s(buf);
+	size_t sep = s.find_last_of(L'\\');
+	return sep == std::wstring::npos ? std::wstring() : s.substr(0, sep);
+}
+
+static void AddStep(std::wstring& log, const wchar_t* label, bool ok) {
+	log += ok ? L"[成功] " : L"[失败] ";
+	log += label;
+	log += L"\r\n";
+}
+
+bool DetachAll(std::wstring* report) {
+	std::wstring log;
+	std::wstring jiyuDir = JiyuStudentDir();
+	bool allOk = true;
+
+	bool r = NTDExt::ClearKeyboardAndMouseLock();
+	AddStep(log, L"解除键盘鼠标锁定", r); allOk = allOk && r;
+
+	StartInputUnlock();
+	r = IsInputUnlockRunning();
+	AddStep(log, L"启动键鼠解锁线程", r); allOk = allOk && r;
+
+	if (jiyuDir.empty()) {
+		AddStep(log, L"脱离远程关机（未找到极域目录，跳过）", false); allOk = false;
+	} else {
+		r = NTDExt::ToggleNoShutdown(jiyuDir.c_str(), true);
+		AddStep(log, L"脱离远程关机", r); allOk = allOk && r;
+	}
+
+	r = NTDExt::ToggleUSBDeviceLimit(true);
+	AddStep(log, L"解除 U 盘/软件限制", r); allOk = allOk && r;
+
+	r = NTDExt::ToggleWebsiteUnblock(true);
+	AddStep(log, L"解除网站限制", r); allOk = allOk && r;
+
+	r = NTDExt::ClearImageFileExecutionOptions();
+	AddStep(log, L"解除映像劫持", r); allOk = allOk && r;
+
+	r = NTDExt::ClearGroupPolicyRestrictions();
+	AddStep(log, L"解除组策略限制", r); allOk = allOk && r;
+
+	r = NTDExt::UnlockJiyuAntiKill();
+	AddStep(log, L"解除极域防杀钩子", r); allOk = allOk && r;
+
+	if (!IsProcessProtected()) ToggleProcessProtection();
+	r = IsProcessProtected();
+	AddStep(log, L"开启进程防杀(ACL)", r); allOk = allOk && r;
+
+	InstallDialogProtection();
+	AddStep(log, L"开启对话框防截屏", true);
+
+	if (report) *report = log;
+	return allOk;
+}
+
+bool RestoreAll(std::wstring* report) {
+	std::wstring log;
+	std::wstring jiyuDir = JiyuStudentDir();
+	bool allOk = true;
+
+	bool r = true;
+	if (!jiyuDir.empty())
+		r = NTDExt::ToggleNoShutdown(jiyuDir.c_str(), false);
+	else
+		r = false;
+	AddStep(log, L"恢复远程关机", r); allOk = allOk && r;
+
+	r = NTDExt::ToggleUSBDeviceLimit(false);
+	AddStep(log, L"恢复 U 盘/软件限制", r); allOk = allOk && r;
+
+	r = NTDExt::ToggleWebsiteUnblock(false);
+	AddStep(log, L"恢复网站限制", r); allOk = allOk && r;
+
+	StopInputUnlock();
+	AddStep(log, L"停止键鼠解锁线程", !IsInputUnlockRunning());
+
+	if (IsProcessProtected()) ToggleProcessProtection();
+	AddStep(log, L"关闭进程防杀(ACL)", !IsProcessProtected());
+
+	UninstallDialogProtection();
+	AddStep(log, L"关闭对话框防截屏", true);
+
+	r = SetTeacherCommBlock(false);
+	AddStep(log, L"关闭教师端通信阻断", r); allOk = allOk && r;
+
+	if (report) *report = log;
+	return allOk;
 }
 
 } // namespace mythware_ext

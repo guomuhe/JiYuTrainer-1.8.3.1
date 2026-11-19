@@ -12,6 +12,7 @@
 #include "RegHlp.h"
 #include "TxtUtils.h"
 #include "XUnzip.h"
+#include "MythwareExt.h"
 #include <VersionHelpers.h>
 #include <Shlwapi.h>
 #include <winioctl.h>
@@ -517,6 +518,16 @@ int JTAppInternal::RunInternal()
 		else printf_s("未能清除极域内核保护，详情请查看日志\n");
 		return 0;
 	}
+	if (appSelfCheckMode) {
+		std::wstring path;
+		std::wstring rep = mythware_ext::BuildCapabilityReport();
+		wprintf_s(L"%ls\n", rep.c_str());
+		if (mythware_ext::WriteSelfCheckReport(&path))
+			wprintf_s(L"报告已写入：%ls\n", path.c_str());
+		else
+			wprintf_s(L"报告写入失败\n");
+		return 0;
+	}
 	if (!appArgInstallMode) {
 		appForceNoDriver = CheckAntiVirusSoftware(appShowAvTest);
 		if (appFirstUse) appSetting->SetSettingBool(L"FirstUse", false, L"JTArgeement");
@@ -749,6 +760,7 @@ void JTAppInternal::InitArgs()
 	if (FindArgInCommandLine(appArgList, appArgCount, L"bugreport") != -1) appIsBugReportMode = true;
 	if (FindArgInCommandLine(appArgList, appArgCount, L"crash-test") != -1) appCrashTestMode = true;
 	if (FindArgInCommandLine(appArgList, appArgCount, L"killst") != -1) appKillStMode = true;
+	if (FindArgInCommandLine(appArgList, appArgCount, L"selfcheck") != -1) appSelfCheckMode = true;
 	if (FindArgInCommandLine(appArgList, appArgCount, L"?") != -1) appCmdHelpMode = true;
 
 	int argFIndex = FindArgInCommandLine(appArgList, appArgCount, L"f");

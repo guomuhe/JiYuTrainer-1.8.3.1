@@ -13,6 +13,8 @@
 #include "SettingHlp.h"
 #include "RegHlp.h"
 #include "NTDExt.h"
+#include "MythwareExt.h"
+#include "OpChain.h"
 #include "inject.h"
 #include "window_utils.h"
 #include "Resource.h"
@@ -76,6 +78,7 @@ void TrainerWorkerInternal::InitSettings()
 {
 	SettingHlp*settings = currentApp->GetSettings();
 	setAutoIncludeFullWindow = settings->GetSettingBool(L"AutoIncludeFullWindow");
+	setAutoReapply = settings->GetSettingBool(L"AutoReapply", true);
 	setCkInterval = currentApp->GetSettings()->GetSettingInt(L"CKInterval", 3100);
 	setAllowGbTop = settings->GetSettingBool(L"AllowGbTop", false);
 	if (setCkInterval < 1000 || setCkInterval > 10000) setCkInterval = 3000;
@@ -370,23 +373,31 @@ void TrainerWorkerInternal::ApplyAntiCapture() {
 	wchar_t* sep = wcsrchr(dllPath, L'\\');
 	if (sep) wcscpy_s(sep + 1, MAX_PATH - (sep - dllPath), L"JyuHideHook.dll");
 
-	// 3a. 优先从内嵌 BIN 资源 (IDR_DLL_HIDE_HOOK=141) 释放到磁盘
+	// 3a. 从内嵌 BIN 资源释放 32/64 位 DLL，供注入时按目标位数自动匹配
 	HINSTANCE hInst = GetModuleHandleW(nullptr);
-	HRSRC hRes = FindResourceW(hInst, MAKEINTRESOURCEW(IDR_DLL_HIDE_HOOK), L"BIN");
-	if (hRes) {
+	auto extractRes = [&](int resId, const wchar_t* fileName) -> bool {
+		wchar_t outPath[MAX_PATH] = {};
+		GetModuleFileNameW(nullptr, outPath, MAX_PATH);
+		wchar_t* s = wcsrchr(outPath, L'\\');
+		if (s) wcscpy_s(s + 1, MAX_PATH - (s - outPath), fileName);
+		HRSRC hRes = FindResourceW(hInst, MAKEINTRESOURCEW(resId), L"BIN");
+		if (!hRes) return GetFileAttributesW(outPath) != INVALID_FILE_ATTRIBUTES;
 		HGLOBAL hG = LoadResource(hInst, hRes);
-		if (hG) {
-			LPVOID pData = LockResource(hG);
-			DWORD sz = SizeofResource(hInst, hRes);
-			HANDLE hf = CreateFileW(dllPath, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, 0, nullptr);
-			if (hf != INVALID_HANDLE_VALUE) {
-				DWORD w = 0;
-				WriteFile(hf, pData, sz, &w, nullptr);
-				CloseHandle(hf);
-				currentLogger->Log(L"[Injector-cap] 已从内嵌资源释放 JyuHideHook.dll (%lu bytes)", sz);
-			}
-		}
-	}
+		if (!hG) return false;
+		LPVOID pData = LockResource(hG);
+		DWORD sz = SizeofResource(hInst, hRes);
+		HANDLE hf = CreateFileW(outPath, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, 0, nullptr);
+		if (hf == INVALID_HANDLE_VALUE) return false;
+		DWORD w = 0;
+		WriteFile(hf, pData, sz, &w, nullptr);
+		CloseHandle(hf);
+		currentLogger->Log(L"[Injector-cap] 已释放 %s (%lu bytes)", fileName, sz);
+		return true;
+	};
+	bool has32 = extractRes(IDR_DLL_HIDE_HOOK, L"JyuHideHook.dll");
+	bool has64 = extractRes(IDR_DLL_HIDE_HOOK64, L"JyuHideHook64.dll");
+	if (!has64)
+		currentLogger->LogWarn(L"[Injector-cap] 未找到 64 位 JyuHideHook64.dll (目标若为 64 位将无法注入)");
 
 	DWORD attr = GetFileAttributesW(dllPath);
 	if (attr == INVALID_FILE_ATTRIBUTES) {
@@ -394,8 +405,25 @@ void TrainerWorkerInternal::ApplyAntiCapture() {
 		return;
 	}
 
-	// 4. 注入 + 远程调用 SetFlags
-	inject::InjectAndConfigure(targetPid, dllPath, allowGbTop, anticapture, true);
+	// 4. P3 降级链：L0 注入并配置 → L1 仅注入 DLL（位数不匹配时内部走 JyuInject64.exe）
+	std::wstring lastErr;
+	opchain::OpResult cr = opchain::RunChain(L"防截屏注入", {
+		{ 0, L"注入并配置窗口", [&] {
+			inject::Result r = inject::InjectAndConfigure(targetPid, dllPath, allowGbTop, anticapture, true);
+			if (!r.success) lastErr = r.error;
+			return r.success; } },
+		{ 1, L"仅注入 DLL", [&] {
+			inject::Result r = inject::InjectDllOnly(targetPid, dllPath);
+			if (!r.success) lastErr = r.error;
+			return r.success; } },
+	});
+	if (cr.ok) {
+		_AntiCaptureInjected = true;
+		_AntiCapturePid = targetPid;
+		currentLogger->Log(L"[降级链] 防截屏注入 -> %s", cr.detail.c_str());
+	} else {
+		currentLogger->LogError(L"[降级链] 防截屏注入失败: %s", lastErr.c_str());
+	}
 }
 bool TrainerWorkerInternal::Rerun(bool autoWork)
 {
@@ -507,11 +535,29 @@ void* TrainerWorkerInternal::RunOperation(TrainerWorkerOp op)
 		return nullptr;
 	}
 	case TrainerWorkerOpClearKeyMouseLock: {
-		NTDExt::ClearKeyboardAndMouseLock();
+		// P3 降级链：L0 结束锁进程 → L1 低级钩子转发 → L2 解除鼠标裁剪
+		opchain::OpResult r = opchain::RunChain(L"解除键鼠锁定", {
+			{ 0, L"结束极域锁键鼠进程", [] { return NTDExt::ClearKeyboardAndMouseLock(); } },
+			{ 1, L"启动低级钩子转发", [] { mythware_ext::StartInputUnlock(); return mythware_ext::IsInputUnlockRunning(); } },
+			{ 2, L"解除鼠标裁剪区域", [] { return ClipCursor(nullptr) != FALSE; } },
+		});
+		if (r.ok) currentLogger->Log(L"[降级链] 解除键鼠锁定 -> %s", r.detail.c_str());
+		else currentLogger->LogWarn(L"[降级链] %s", r.detail.c_str());
 		return nullptr;
 	}
 	case TrainerWorkerOpToggleWndHide: {
-		NTDExt::ToggleForegroundWindowHide();
+		// P3 降级链：L0 注入 DLL 隐藏 → L1 WDA 防截屏 → L2 移出屏幕
+		HWND fg = GetForegroundWindow();
+		if (!fg) { currentLogger->LogWarn(L"[降级链] 隐藏焦点窗口：无前台窗口"); return nullptr; }
+		opchain::OpResult r = opchain::RunChain(L"隐藏焦点窗口", {
+			{ 0, L"注入 DLL 隐藏", [] { return NTDExt::ToggleForegroundWindowHide(); } },
+			{ 1, L"WDA 防截屏", [fg] { return SetWindowDisplayAffinity(fg, 1) != FALSE; } },
+			{ 2, L"移出屏幕", [fg] {
+				return SetWindowPos(fg, 0, -30000, -30000, 0, 0,
+					SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE) != FALSE; } },
+		});
+		if (r.ok) currentLogger->Log(L"[降级链] 隐藏焦点窗口 -> %s", r.detail.c_str());
+		else currentLogger->LogWarn(L"[降级链] %s", r.detail.c_str());
 		return nullptr;
 	}
 	case TrainerWorkerOpToggleWndTop: {
@@ -537,7 +583,115 @@ bool TrainerWorkerInternal::RunCk()
 
 	MsgCenterSendHWNDS(hWndMain);
 
+	ReapplyReverted();
+
+	// P2-② 广播窗口自动策略：0=关 1=窗口化 2=全屏化
+	int bmode = currentApp->GetSettings()->GetSettingInt(L"BroadcastAutoMode", 0);
+	if (bmode >= 1 && bmode <= 2) {
+		bool found = false, changed = false;
+		mythware_ext::ApplyBroadcastPolicy(bmode == 1, &found, &changed);
+		if (changed) currentLogger->LogInfo(L"[自动策略] 广播窗口已按设置处理（%s）", bmode == 1 ? L"窗口化" : L"全屏化");
+	}
+
 	return _LastResolveWindowCount > 0;
+}
+
+// ============================================================
+// P1-① 功能被回滚后自动重申
+// ============================================================
+static DWORD FindProcIdByExeName(const wchar_t* name) {
+	DWORD id = 0;
+	PROCESSENTRY32W pe = {}; pe.dwSize = sizeof(pe);
+	HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (snap == INVALID_HANDLE_VALUE) return 0;
+	if (Process32FirstW(snap, &pe)) {
+		do {
+			if (_wcsicmp(pe.szExeFile, name) == 0) { id = pe.th32ProcessID; break; }
+		} while (Process32NextW(snap, &pe));
+	}
+	CloseHandle(snap);
+	return id;
+}
+
+static std::wstring ProcImageDir(DWORD pid) {
+	wchar_t buf[MAX_PATH] = {};
+	DWORD size = MAX_PATH;
+	HANDLE h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+	if (!h) return L"";
+	QueryFullProcessImageNameW(h, 0, buf, &size);
+	CloseHandle(h);
+	std::wstring s(buf);
+	size_t sep = s.find_last_of(L'\\');
+	return sep == std::wstring::npos ? std::wstring() : s.substr(0, sep);
+}
+
+// 目标进程是否已加载指定模块（无扩展名比较）；*queried=false 表示无法查询
+static bool TargetHasModule(DWORD pid, const wchar_t* nameNoExt, bool* queried) {
+	*queried = false;
+	HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid);
+	if (snap == INVALID_HANDLE_VALUE)
+		snap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE32, pid);
+	if (snap == INVALID_HANDLE_VALUE) return false;
+	MODULEENTRY32W me = {}; me.dwSize = sizeof(me);
+	bool found = false;
+	if (Module32FirstW(snap, &me)) {
+		*queried = true;
+		do {
+			std::wstring n = me.szModule;
+			size_t dot = n.find_last_of(L'.');
+			if (dot != std::wstring::npos) n = n.substr(0, dot);
+			if (_wcsicmp(n.c_str(), nameNoExt) == 0) { found = true; break; }
+		} while (Module32NextW(snap, &me));
+	}
+	CloseHandle(snap);
+	return found;
+}
+
+void TrainerWorkerInternal::ReapplyReverted()
+{
+	if (!setAutoReapply) return;
+	ULONGLONG now = GetTickCount64();
+	if (now - _LastReapplyTick < 5000) return;
+	_LastReapplyTick = now;
+
+	// 定位极域主进程（优先用已知路径，其次按进程名）
+	DWORD pid = _StudentMainPid;
+	std::wstring dir;
+	if (!_StudentMainPath.empty()) {
+		size_t sep = _StudentMainPath.find_last_of(L'\\');
+		if (sep != std::wstring::npos) dir = _StudentMainPath.substr(0, sep);
+	}
+	if (pid <= 4) pid = FindProcIdByExeName(L"StudentMain.exe");
+	if (pid > 4 && dir.empty()) dir = ProcImageDir(pid);
+
+	// 1) 远程关机保护：此前应用过（存在 Shutdown_back.exe）且 Shutdown.exe 被还原时重申
+	if (!dir.empty()) {
+		std::wstring shut = dir + L"\\Shutdown.exe";
+		std::wstring back = dir + L"\\Shutdown_back.exe";
+		if (GetFileAttributesW(back.c_str()) != INVALID_FILE_ATTRIBUTES) {
+			WIN32_FILE_ATTRIBUTE_DATA fad = {};
+			if (GetFileAttributesExW(shut.c_str(), GetFileExInfoStandard, &fad)) {
+				ULONGLONG sz = ((ULONGLONG)fad.nFileSizeHigh << 32) | fad.nFileSizeLow;
+				if (sz > 4096) {
+					if (NTDExt::ToggleNoShutdown(dir.c_str(), true))
+						currentLogger->Log(L"[自动重申] 远程关机保护被回滚，已重新应用");
+					else
+						currentLogger->LogWarn(L"[自动重申] 远程关机保护重申失败");
+				}
+			}
+		}
+	}
+
+	// 2) 防截屏注入：此前注入成功，但目标进程已重启或 Hook DLL 被卸载时重新注入
+	if (_AntiCaptureInjected && pid > 4) {
+		bool queried = false;
+		bool present = TargetHasModule(pid, L"JyuHideHook", &queried);
+		bool needReapply = queried ? !present : (pid != _AntiCapturePid);
+		if (needReapply) {
+			currentLogger->Log(L"[自动重申] 防截屏注入已失效，正在重新注入...");
+			ApplyAntiCapture();
+		}
+	}
 }
 void TrainerWorkerInternal::RunResetPid()
 {

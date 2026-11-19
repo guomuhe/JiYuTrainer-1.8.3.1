@@ -168,6 +168,10 @@ static inline BOOL HasUIAccess(BOOL* pfUIAccess) {
  * 返回 FALSE 表示当前进程已具备 UIAccess，可继续执行
  */
 static inline BOOL Prepare() {
+    // 测试用：设置 JT_NO_UIACCESS=1 可跳过自身重启，便于本机调试/自动化测试
+    if (GetEnvironmentVariableW(L"JT_NO_UIACCESS", NULL, 0) > 0)
+        return FALSE;
+
     // 1) 非管理员 → 发起 UAC 提权，退出
     if (ElevateIfNeeded()) return TRUE;
 

@@ -140,11 +140,15 @@ private:
 
 	bool setAllowGbTop = false;
 	bool setAutoIncludeFullWindow = false;
+	bool setAutoReapply = true;
 	int setCkInterval = 3100;
 	int screenWidth, screenHeight;
 	bool gbFullManual = false;
 
 	bool _NextLoopGetCkStat = false;
+	bool _AntiCaptureInjected = false;
+	DWORD _AntiCapturePid = 0;
+	ULONGLONG _LastReapplyTick = 0;
 
 	bool _FakeFull = false;
 	bool _LastResoveBroadcastWindow = false, _LastResoveBlackScreenWindow = false;
@@ -155,6 +159,7 @@ private:
 
 	bool RunCk();
 	void RunResetPid();
+	void ReapplyReverted();
 
 	/* Locate and found*/
 

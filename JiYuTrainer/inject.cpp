@@ -13,6 +13,104 @@ static std::wstring AsciiToWide(const char* s) {
     return r;
 }
 
+// ── 32/64 位自动匹配 ────────────────────────────────────────────
+static bool HostIs64Bit() {
+#ifdef _WIN64
+    return true;
+#else
+    return false;
+#endif
+}
+
+// 目标进程是否 64 位；查询失败时返回 false 且 *ok=false
+static bool TargetIs64Bit(DWORD pid, bool* ok) {
+    *ok = false;
+    HANDLE h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+    if (!h) return false;
+    BOOL wow = FALSE;
+    BOOL r = IsWow64Process(h, &wow);
+    CloseHandle(h);
+    if (!r) return false;
+    *ok = true;
+    SYSTEM_INFO si = {};
+    GetNativeSystemInfo(&si);
+    bool os64 = (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64);
+    return os64 && !wow;   // 64 位系统 + 非 WoW64 = 纯 64 位进程
+}
+
+// xxx.dll → xxx64.dll
+static std::wstring ArchPath(const std::wstring& dllPath, bool want64) {
+    if (!want64) return dllPath;
+    size_t dot = dllPath.find_last_of(L'.');
+    size_t sep = dllPath.find_last_of(L"\\/");
+    if (dot == std::wstring::npos || (sep != std::wstring::npos && dot < sep))
+        return dllPath + L"64.dll";
+    return dllPath.substr(0, dot) + L"64" + dllPath.substr(dot);
+}
+
+// 外部注入器：32 位进程无法直接注入 64 位目标，交给同目录的 JyuInject64.exe
+// 参数：<pid> <dllPath> <topmost 0|1> <anticapture 0|1>
+static Result RunExternalInjector(DWORD pid, const std::wstring& dllPath,
+                                  bool topmost, bool anticapture) {
+    Result result = {};
+    wchar_t self[MAX_PATH] = {};
+    GetModuleFileNameW(nullptr, self, MAX_PATH);
+    std::wstring dir(self);
+    size_t sep = dir.find_last_of(L"\\/");
+    dir = (sep == std::wstring::npos) ? std::wstring() : dir.substr(0, sep + 1);
+    std::wstring exe = dir + L"JyuInject64.exe";
+    if (GetFileAttributesW(exe.c_str()) == INVALID_FILE_ATTRIBUTES) {
+        result.error = L"目标为 64 位进程，32 位主程序无法直接注入，且未找到 JyuInject64.exe";
+        return result;
+    }
+    wchar_t cmd[MAX_PATH * 2 + 64] = {};
+    swprintf_s(cmd, L"\"%s\" %lu \"%s\" %d %d",
+               exe.c_str(), pid, dllPath.c_str(), topmost ? 1 : 0, anticapture ? 1 : 0);
+    STARTUPINFOW si = { sizeof(si) };
+    PROCESS_INFORMATION pi = {};
+    if (!CreateProcessW(nullptr, cmd, nullptr, nullptr, FALSE,
+                        CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) {
+        result.error = L"启动 JyuInject64.exe 失败: " + WSTR(GetLastError());
+        return result;
+    }
+    WaitForSingleObject(pi.hProcess, 15000);
+    DWORD rc = 1;
+    GetExitCodeProcess(pi.hProcess, &rc);
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+    result.success = (rc == 0);
+    result.exitCode = rc;
+    if (!result.success) result.error = L"JyuInject64.exe 返回错误码: " + WSTR(rc);
+    else logger::Info(L"通过 JyuInject64.exe 注入成功 PID=" + WSTR(pid));
+    return result;
+}
+
+// 根据目标位数决定 DLL 路径，以及是否需要外部注入器
+struct ArchPlan {
+    std::wstring dllPath;
+    bool needExternal = false;
+    bool ok = true;
+    std::wstring error;
+};
+
+static ArchPlan PlanInjection(DWORD pid, const std::wstring& dllPath) {
+    ArchPlan p;
+    p.dllPath = dllPath;
+    bool queried = false;
+    bool target64 = TargetIs64Bit(pid, &queried);
+    if (!queried) return p;             // 查不到位数就按原路径兜底
+    p.dllPath = ArchPath(dllPath, target64);
+    if (target64 == HostIs64Bit()) return p;
+
+    p.needExternal = true;
+    if (GetFileAttributesW(p.dllPath.c_str()) == INVALID_FILE_ATTRIBUTES) {
+        p.ok = false;
+        p.error = std::wstring(L"目标进程为 ") + (target64 ? L"64" : L"32") +
+                  L" 位，但缺少匹配的 DLL: " + p.dllPath;
+    }
+    return p;
+}
+
 Result InjectAndCall(HWND hwnd,
                      const std::wstring& dllPath,
                      const char* funcName,
@@ -26,6 +124,14 @@ Result InjectAndCall(HWND hwnd,
         result.error = L"目标窗口是本进程或无效 PID";
         return result;
     }
+    ArchPlan plan = PlanInjection(pid, dllPath);
+    if (!plan.ok) { result.error = plan.error; return result; }
+    if (plan.needExternal) {
+        result.error = L"目标进程与本程序位数不同，无法远程调用 " + AsciiToWide(funcName) +
+                       L"；请改用 JyuInject64.exe（仅支持加载）";
+        return result;
+    }
+    const std::wstring& useDll = plan.dllPath;
     HANDLE hProcess = OpenProcess(
         PROCESS_QUERY_INFORMATION | PROCESS_CREATE_THREAD |
         PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ,
@@ -36,12 +142,12 @@ Result InjectAndCall(HWND hwnd,
     }
 
     // Step 1: 在目标进程分配内存 → 写 DLL 路径
-    size_t pathBytes = (dllPath.length() + 1) * sizeof(wchar_t);
+    size_t pathBytes = (useDll.length() + 1) * sizeof(wchar_t);
     LPVOID pRemoteMem = VirtualAllocEx(hProcess, nullptr, pathBytes,
                                        MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
     if (!pRemoteMem) { result.error = L"VirtualAllocEx(DLL路径) 失败: " + WSTR(GetLastError()); CloseHandle(hProcess); return result; }
     SIZE_T bytesWritten = 0;
-    if (!WriteProcessMemory(hProcess, pRemoteMem, dllPath.c_str(), pathBytes, &bytesWritten)) {
+    if (!WriteProcessMemory(hProcess, pRemoteMem, useDll.c_str(), pathBytes, &bytesWritten)) {
         result.error = L"WriteProcessMemory(DLL路径) 失败: " + WSTR(GetLastError());
         VirtualFreeEx(hProcess, pRemoteMem, 0, MEM_RELEASE); CloseHandle(hProcess); return result;
     }
@@ -58,8 +164,8 @@ Result InjectAndCall(HWND hwnd,
     VirtualFreeEx(hProcess, pRemoteMem, 0, MEM_RELEASE);
 
     // Step 3: 本地 LoadLibrary 获取导出函数偏移
-    HMODULE hLocalDll = LoadLibraryW(dllPath.c_str());
-    if (!hLocalDll) { result.error = L"本地加载 DLL 失败: " + dllPath + L" err=" + WSTR(GetLastError()); CloseHandle(hProcess); return result; }
+    HMODULE hLocalDll = LoadLibraryW(useDll.c_str());
+    if (!hLocalDll) { result.error = L"本地加载 DLL 失败: " + useDll + L" err=" + WSTR(GetLastError()); CloseHandle(hProcess); return result; }
     FARPROC pfnLocal = GetProcAddress(hLocalDll, funcName);
     if (!pfnLocal) { result.error = L"找不到导出函数 " + AsciiToWide(funcName); FreeLibrary(hLocalDll); CloseHandle(hProcess); return result; }
     DWORD_PTR offset = (DWORD_PTR)pfnLocal - (DWORD_PTR)hLocalDll;
@@ -67,7 +173,7 @@ Result InjectAndCall(HWND hwnd,
     // Step 4: 在目标进程里找 DLL 基址
     HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid);
     if (hSnap == INVALID_HANDLE_VALUE) { result.error = L"Snapshot 失败: " + WSTR(GetLastError()); FreeLibrary(hLocalDll); CloseHandle(hProcess); return result; }
-    std::wstring matchName = dllPath;
+    std::wstring matchName = useDll;
     size_t sl = matchName.find_last_of(L"\\/");
     if (sl != std::wstring::npos) matchName = matchName.substr(sl + 1);
     size_t dl = matchName.find_last_of(L'.');
@@ -122,13 +228,18 @@ Result InjectAndCall(HWND hwnd,
 
 Result InjectDllOnly(DWORD pid, const std::wstring& dllPath) {
     Result result = {};
+    ArchPlan plan = PlanInjection(pid, dllPath);
+    if (!plan.ok) { result.error = plan.error; return result; }
+    if (plan.needExternal) return RunExternalInjector(pid, plan.dllPath, false, false);
+    const std::wstring& useDll = plan.dllPath;
+
     HANDLE hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_VM_OPERATION | PROCESS_VM_WRITE, FALSE, pid);
     if (!hProcess) { result.error = L"OpenProcess 失败: " + WSTR(GetLastError()); return result; }
-    size_t pathBytes = (dllPath.length() + 1) * sizeof(wchar_t);
+    size_t pathBytes = (useDll.length() + 1) * sizeof(wchar_t);
     LPVOID pRemote = VirtualAllocEx(hProcess, nullptr, pathBytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
     if (!pRemote) { result.error = L"VirtualAllocEx 失败: " + WSTR(GetLastError()); CloseHandle(hProcess); return result; }
     SIZE_T w = 0;
-    if (!WriteProcessMemory(hProcess, pRemote, dllPath.c_str(), pathBytes, &w)) {
+    if (!WriteProcessMemory(hProcess, pRemote, useDll.c_str(), pathBytes, &w)) {
         result.error = L"WriteProcessMemory 失败: " + WSTR(GetLastError());
         VirtualFreeEx(hProcess, pRemote, 0, MEM_RELEASE); CloseHandle(hProcess); return result;
     }
@@ -181,6 +292,11 @@ Result InjectAndConfigure(DWORD pid, const std::wstring& dllPath,
         return result;
     }
 
+    ArchPlan plan = PlanInjection(pid, dllPath);
+    if (!plan.ok) { result.error = plan.error; return result; }
+    if (plan.needExternal) return RunExternalInjector(pid, plan.dllPath, topmost, anticapture);
+    const std::wstring& useDll = plan.dllPath;
+
     // 可选: 先导入 Toolkit_fix.reg (极域置顶需要根证书修复)
     if (topmost && importToolkitReg) {
         static const wchar_t* kToolkitReg =
@@ -216,10 +332,10 @@ Result InjectAndConfigure(DWORD pid, const std::wstring& dllPath,
     if (!hProcess) { result.error = L"OpenProcess(ALL_ACCESS) 失败: " + WSTR(GetLastError()); return result; }
 
     // Step 1: VirtualAllocEx → WriteProcessMemory DLL path
-    size_t pathBytes = (dllPath.length() + 1) * sizeof(wchar_t);
+    size_t pathBytes = (useDll.length() + 1) * sizeof(wchar_t);
     LPVOID remoteStr = VirtualAllocEx(hProcess, nullptr, pathBytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
     if (!remoteStr) { result.error = L"VirtualAllocEx 失败"; CloseHandle(hProcess); return result; }
-    if (!WriteProcessMemory(hProcess, remoteStr, dllPath.c_str(), pathBytes, nullptr)) {
+    if (!WriteProcessMemory(hProcess, remoteStr, useDll.c_str(), pathBytes, nullptr)) {
         result.error = L"WriteProcessMemory(DLL路径) 失败"; VirtualFreeEx(hProcess, remoteStr, 0, MEM_RELEASE); CloseHandle(hProcess); return result;
     }
 
@@ -238,7 +354,7 @@ Result InjectAndConfigure(DWORD pid, const std::wstring& dllPath,
     }
 
     // Step 3: 本地 LoadLibraryEx → GetProcAddress("SetFlags") → 计算偏移
-    HMODULE localMod = LoadLibraryExW(dllPath.c_str(), nullptr, DONT_RESOLVE_DLL_REFERENCES);
+    HMODULE localMod = LoadLibraryExW(useDll.c_str(), nullptr, DONT_RESOLVE_DLL_REFERENCES);
     if (!localMod) { result.error = L"本地 LoadLibraryEx 失败"; VirtualFreeEx(hProcess, remoteStr, 0, MEM_RELEASE); CloseHandle(hProcess); return result; }
     FARPROC localFunc = GetProcAddress(localMod, "SetFlags");
     if (!localFunc) { result.error = L"DLL 没有导出 SetFlags"; FreeLibrary(localMod); VirtualFreeEx(hProcess, remoteStr, 0, MEM_RELEASE); CloseHandle(hProcess); return result; }

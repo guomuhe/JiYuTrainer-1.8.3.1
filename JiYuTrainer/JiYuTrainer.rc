@@ -140,6 +140,8 @@ IDR_DLL_RTCORE           BIN                     "..\\Release\\RTCore64.sys"
 
 IDR_DLL_HIDE_HOOK        BIN                     "..\\Release\\JyuHideHook.dll"
 
+206                     BIN                     "..\\Release\\JyuHideHook64.dll"
+
 #else
 
 IDR_DLL_DRIVER          BIN                     "..\\Release\\JiYuTrainerDriver.sys"
@@ -153,6 +155,8 @@ IDR_EXE_KERNEL_CLEANER  BIN                     "..\\Release\\KernelCallbackClea
 IDR_DLL_RTCORE           BIN                     "..\\Release\\RTCore64.sys"
 
 IDR_DLL_HIDE_HOOK        BIN                     "..\\Release\\JyuHideHook.dll"
+
+206                     BIN                     "..\\Release\\JyuHideHook64.dll"
 
 #endif
 

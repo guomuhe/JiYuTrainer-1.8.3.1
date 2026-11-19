@@ -126,6 +126,7 @@ private:
 	bool appCrashTestMode = false;
 	bool appCmdHelpMode = false;
 	bool appKillStMode = false;
+	bool appSelfCheckMode = false;
 
 	int appShowCmd = 0;
 	std::wstring updaterPath;
