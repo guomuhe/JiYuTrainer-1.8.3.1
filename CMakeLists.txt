@@ -41,6 +41,12 @@ if(MSVC)
     add_compile_options(/utf-8)
 endif()
 
+# 注入到其它进程的 DLL 不能依赖 libgcc/libstdc++/winpthread 运行库
+# （目标进程目录里没有这些 DLL，LoadLibrary 会失败 126）
+if(MINGW)
+    add_link_options(-static)
+endif()
+
 # 全局预处理器定义
 add_compile_definitions(
     WIN32

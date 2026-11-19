@@ -20,3 +20,8 @@ add_custom_command(TARGET JyuHideHook POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:JyuHideHook> ${CMAKE_SOURCE_DIR}/Release/JyuHideHook.dll
 )
+
+# 导出名去 stdcall 装饰（否则是 RemoteSetAffinity@4，GetProcAddress 查不到）
+if(MINGW)
+    target_link_options(JyuHideHook PRIVATE -Wl,--kill-at)
+endif()

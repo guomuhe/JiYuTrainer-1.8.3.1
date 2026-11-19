@@ -69,15 +69,17 @@ static void ApplySettings() {
     else
         SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
-    // 2. 防截屏 (WDA_EXCLUDEFROMCAPTURE) / 允许监视 (WDA_MONITOR)
+    // 2. 防截屏 / 允许监视
+    //    实测：极域这类 GDI BitBlt 抓屏只尊重 WDA_MONITOR（截图变黑），
+    //          WDA_EXCLUDEFROMCAPTURE 只影响 WGC/DWM 抓屏，对 GDI 无效。
     HMODULE hUser32 = GetModuleHandleW(L"user32.dll");
     if (!hUser32) return;
     auto pSWDA = (SetWindowDisplayAffinity_t)GetProcAddress(hUser32, "SetWindowDisplayAffinity");
     if (!pSWDA) return;
     if (g_config.enableAntiCapture)
-        pSWDA(hwnd, WDA_EXCLUDEFROMCAPTURE); // 教师截屏时此窗口不显示
+        pSWDA(hwnd, WDA_MONITOR);   // 教师截屏时此窗口变黑
     else
-        pSWDA(hwnd, WDA_MONITOR);            // 允许教师监视 (默认)
+        pSWDA(hwnd, WDA_NONE);      // 允许教师正常监视
 }
 
 // ============================================================

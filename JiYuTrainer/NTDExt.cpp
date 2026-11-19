@@ -666,10 +666,12 @@ bool ToggleForegroundWindowHide()
         return ok;
     }
 
-    // Win10 2004+ 用 EXCLUDEFROMCAPTURE（窗口从截屏中完全移除）
-    // 老系统不支持该值，回退 WDA_MONITOR（截屏中该窗口变黑）
-    bool ok = ApplyWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE) ||
-              ApplyWindowDisplayAffinity(hwnd, WDA_MONITOR);
+    // 实测结论（见 mock_teacher.py selftest）：
+    //   极域这类 GDI BitBlt 抓屏只尊重 WDA_MONITOR（截屏变黑），
+    //   WDA_EXCLUDEFROMCAPTURE 只对 WGC/DWM 抓屏有效，GDI 仍能截到画面。
+    //   因此优先 WDA_MONITOR，失败（极少数场景）再回退 EXCLUDEFROMCAPTURE。
+    bool ok = ApplyWindowDisplayAffinity(hwnd, WDA_MONITOR) ||
+              ApplyWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE);
     if (ok) MarkHidden(hwnd, true);
     return ok;
 }
