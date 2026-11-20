@@ -484,6 +484,253 @@ bool StartService(const wchar_t* serviceName)
 
 // ==================== 注册表操作 ====================
 
+static const wchar_t* kIfeoRoot =
+    L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options";
+
+// 极域/恶意软件常用的 IFEO 目标（清理清单）
+static const wchar_t* kCommonToolTargets[] = {
+    L"cmd.exe", L"cmd", L"command.exe",
+    L"regedit.exe", L"regedit", L"regedt32.exe",
+    L"taskmgr.exe", L"taskmgr",
+    L"powershell.exe", L"powershell",
+    L"pwsh.exe", L"pwsh",
+    L"mmc.exe",
+    L"mspaint.exe",
+    L"notepad.exe",
+    L"calc.exe",
+    L"procexp.exe", L"procexp64.exe", L"ProcessExplorer.exe",
+    L"processhacker.exe", L"ProcessHacker.exe",
+    L"PCHunter.exe", L"pchunter64.exe",
+    L"WuKong.exe",
+    L"Xuetr.exe",
+    L"ATool.exe",
+    L"IceSword.exe",
+    L"IceSword64.exe",
+    L"ProcDump.exe",
+    L"Autoruns.exe", L"Autoruns64.exe",
+    L"Sigcheck.exe",
+    L"HxD.exe",
+    L"UltraEdit.exe",
+    L"WinHex.exe",
+    L"OllyDbg.exe",
+    L"x64dbg.exe", L"x32dbg.exe",
+    L"WPE-Pro.exe",
+    L"Fiddler.exe", L"Fiddler64.exe",
+    L"IDA.exe", L"ida64.exe",
+    L"IDA64.exe",
+    L"Hacker.Decompile.exe",
+    L"Hacker.Decompile.64.exe",
+    L"Petya.exe",
+    L"cmdow.exe",
+    L"JiYuTrainer.exe", L"JiYuTrainer.exe.exe",
+    nullptr
+};
+
+// 系统合法调试器（不清理）
+static const wchar_t* kLegitimateDebuggers[] = {
+    L"GBD.exe", L"GBD64.exe",           // Visual Studio 调试器
+    L"vsjitdebugger.exe",                // VS 即时调试器
+    L"windbg.exe", L"windbgx.exe",       // WinDbg
+    L"ntsd.exe",                        // 符号化调试器
+    L"cdb.exe",                         // Console Debugger
+    L"kd.exe", L"kdx.exe",              // Kernel Debugger
+    L"difxapi.exe",
+    nullptr
+};
+
+static bool IsCommonTool(const wchar_t* name) {
+    for (int i = 0; kCommonToolTargets[i]; i++)
+        if (_wcsicmp(kCommonToolTargets[i], name) == 0) return true;
+    return false;
+}
+
+static bool IsLegitimateDebugger(const wchar_t* dbgPath) {
+    // 检查 debugger 值里是否包含合法调试器
+    std::wstring s = dbgPath ? dbgPath : L"";
+    for (int i = 0; kLegitimateDebuggers[i]; i++)
+        if (_wcsicmp(s.c_str(), kLegitimateDebuggers[i]) == 0) return true;
+    // 路径里包含这些关键字也算
+    const wchar_t* keywords[] = { L"\\VS\\", L"\\Microsoft Visual Studio", L"\\Debuggers\\", L"\\Windbg\\", nullptr };
+    for (int i = 0; keywords[i]; i++)
+        if (wcsstr(s.c_str(), keywords[i]) != nullptr) return true;
+    return false;
+}
+
+// 读指定 IFEO 子键的 debugger 值；*dbg 为空表示没有（HKLM + HKCU 合并，HKLM 优先）
+static bool QueryIfeoDebugger(const wchar_t* exeName, std::wstring* dbg) {
+    HKEY hRoots[2] = { HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER };
+    for (int i = 0; i < 2; i++) {
+        HKEY hSub;
+        if (RegOpenKeyExW(hRoots[i], (std::wstring(kIfeoRoot) + L"\\" + exeName).c_str(),
+                          0, KEY_QUERY_VALUE, &hSub) != ERROR_SUCCESS) continue;
+        wchar_t data[2048] = {};
+        DWORD dataSize = sizeof(data);
+        DWORD type = 0;
+        LONG q = RegQueryValueExW(hSub, L"debugger", NULL, &type, (LPBYTE)data, &dataSize);
+        RegCloseKey(hSub);
+        if (q == ERROR_SUCCESS) {
+            if (dbg) *dbg = data;
+            return true;
+        }
+    }
+    return false;
+}
+
+// 从 HKLM 和 HKCU 都删除指定 IFEO 子键
+static bool DeleteIfeoKey(const wchar_t* exeName) {
+    std::wstring full = std::wstring(kIfeoRoot) + L"\\" + exeName;
+    bool lm = RegDeleteKeyW(HKEY_LOCAL_MACHINE, full.c_str()) == ERROR_SUCCESS ||
+              GetLastError() == ERROR_FILE_NOT_FOUND;
+    bool cu = RegDeleteKeyW(HKEY_CURRENT_USER, full.c_str()) == ERROR_SUCCESS ||
+              GetLastError() == ERROR_FILE_NOT_FOUND;
+    return lm || cu;
+}
+
+// 在 hRoot 指定的根下枚举 IFEO
+static void EnumerateIfeoFrom(HKEY hRoot, std::vector<IfeoEntry>* out,
+                              const wchar_t* selfPath, const wchar_t* selfName) {
+    HKEY hParentKey;
+    if (RegOpenKeyExW(hRoot, kIfeoRoot, 0,
+                      KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE, &hParentKey) != ERROR_SUCCESS)
+        return;
+
+    wchar_t subkeyName[256];
+    DWORD nameLen;
+    DWORD index = 0;
+    while (true) {
+        nameLen = 256;
+        LONG ret = RegEnumKeyExW(hParentKey, index++, subkeyName, &nameLen, NULL, NULL, NULL, NULL);
+        if (ret == ERROR_NO_MORE_ITEMS) break;
+        if (ret != ERROR_SUCCESS) break;
+
+        std::wstring dbg;
+        // 读 HKLM 下的 debugger（HKLM 优先级高于 HKCU）
+        HKEY hSub;
+        if (RegOpenKeyExW(hRoot, (std::wstring(kIfeoRoot) + L"\\" + subkeyName).c_str(),
+                          0, KEY_QUERY_VALUE, &hSub) == ERROR_SUCCESS) {
+            wchar_t data[2048] = {};
+            DWORD dataSize = sizeof(data);
+            DWORD type = 0;
+            LONG q = RegQueryValueExW(hSub, L"debugger", NULL, &type, (LPBYTE)data, &dataSize);
+            RegCloseKey(hSub);
+            if (q == ERROR_SUCCESS) {
+                dbg = data;
+                IfeoEntry e;
+                e.exeName = subkeyName;
+                e.debugger = dbg;
+                e.ourProtect = (_wcsicmp(subkeyName, selfName) == 0 &&
+                                _wcsicmp(dbg.c_str(), selfPath) == 0);
+                out->push_back(e);
+            }
+        }
+    }
+    RegCloseKey(hParentKey);
+}
+
+// 自 exe 完整路径提取基名（不含路径）
+static std::wstring SelfBaseName() {
+    wchar_t full[MAX_PATH] = {};
+    GetModuleFileNameW(nullptr, full, MAX_PATH);
+    const wchar_t* p = wcsrchr(full, L'\\');
+    return std::wstring(p ? p + 1 : full);
+}
+
+std::vector<IfeoEntry> ScanIfeoHijacks() {
+    wchar_t selfPath[MAX_PATH] = {};
+    GetModuleFileNameW(nullptr, selfPath, MAX_PATH);
+    std::wstring selfName = SelfBaseName();
+
+    std::vector<IfeoEntry> result;
+    // 先扫 HKLM
+    EnumerateIfeoFrom(HKEY_LOCAL_MACHINE, &result, selfPath, selfName.c_str());
+    // 再扫 HKCU（去重）
+    EnumerateIfeoFrom(HKEY_CURRENT_USER, &result, selfPath, selfName.c_str());
+    // 去重（同一 exe 两边都有的话只保留一份，HKLM 优先已自然排在前面）
+    std::vector<IfeoEntry> unique;
+    for (auto& e : result) {
+        bool dup = false;
+        for (auto& u : unique) if (_wcsicmp(u.exeName.c_str(), e.exeName.c_str()) == 0) { dup = true; break; }
+        if (!dup) unique.push_back(e);
+    }
+    return unique;
+}
+
+bool ClearSpecificIfeo(const wchar_t* exeName) {
+    if (!exeName || !*exeName) return false;
+    return DeleteIfeoKey(exeName);
+}
+
+bool ClearCommonToolsIfeos(std::wstring* report) {
+    auto entries = ScanIfeoHijacks();
+    std::wstring log;
+    int cleared = 0;
+    bool allOk = true;
+    for (auto& e : entries) {
+        // 跳过系统合法调试器配置
+        if (IsLegitimateDebugger(e.debugger.c_str())) {
+            if (report) log += L"[保留合法] " + e.exeName + L" -> " + e.debugger + L"\r\n";
+            continue;
+        }
+        // 跳过我们自己加的保护
+        if (e.ourProtect) {
+            if (report) log += L"[保留自护 ] " + e.exeName + L" -> self\r\n";
+            continue;
+        }
+        // 只清理常见目标（极域常用的工具限制）
+        if (IsCommonTool(e.exeName.c_str())) {
+            bool ok = DeleteIfeoKey(e.exeName.c_str());
+            if (ok) cleared++;
+            else allOk = false;
+            if (report) log += std::wstring(ok ? L"[清除  ] " : L"[失败  ] ") + e.exeName + L" -> " + e.debugger + L"\r\n";
+        } else {
+            if (report) log += L"[未处理 ] " + e.exeName + L" -> " + e.debugger + L" (非常规目标)\r\n";
+        }
+    }
+    if (report) *report = log;
+    return allOk;
+}
+
+bool ProtectSelfIfeo() {
+    wchar_t selfPath[MAX_PATH] = {};
+    GetModuleFileNameW(nullptr, selfPath, MAX_PATH);
+    std::wstring selfName = SelfBaseName();
+    std::wstring fullPath = std::wstring(kIfeoRoot) + L"\\" + selfName;
+
+    bool wroteAny = false;
+    HKEY roots[2] = { HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER };
+    for (int i = 0; i < 2; i++) {
+        HKEY hKey;
+        LONG ret = RegCreateKeyExW(roots[i], fullPath.c_str(), 0, NULL, 0, KEY_SET_VALUE, NULL, &hKey, NULL);
+        if (ret != ERROR_SUCCESS) continue;
+
+        // 检查现有 debugger —— 如果已经是指向自己了就跳过（已保护）
+        wchar_t cur[2048] = {};
+        DWORD cs = sizeof(cur);
+        DWORD ct = 0;
+        if (RegQueryValueExW(hKey, L"debugger", NULL, &ct, (LPBYTE)cur, &cs) == ERROR_SUCCESS) {
+            if (_wcsicmp(cur, selfPath) == 0) { RegCloseKey(hKey); continue; }
+        }
+
+        ret = RegSetValueExW(hKey, L"debugger", 0, REG_SZ, (const BYTE*)selfPath,
+                             (DWORD)((wcslen(selfPath) + 1) * sizeof(wchar_t)));
+        RegCloseKey(hKey);
+        if (ret == ERROR_SUCCESS) wroteAny = true;
+    }
+    return wroteAny;
+}
+
+bool IsSelfIfeoHijacked(std::wstring* outDebugger) {
+    wchar_t selfPath[MAX_PATH] = {};
+    GetModuleFileNameW(nullptr, selfPath, MAX_PATH);
+    std::wstring selfName = SelfBaseName();
+
+    std::wstring dbg;
+    if (!QueryIfeoDebugger(selfName.c_str(), &dbg)) return false;  // 没有 IFEO 条目
+    if (_wcsicmp(dbg.c_str(), selfPath) == 0) return false;  // 是我们自己的保护
+    if (outDebugger) *outDebugger = dbg;
+    return true;
+}
+
 bool ClearImageFileExecutionOptions()
 {
     // 等价于 Python: 遍历 HKLM\...\Image File Execution Options，删除含 debugger 值的子键

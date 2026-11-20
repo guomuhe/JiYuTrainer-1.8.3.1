@@ -4,6 +4,8 @@
 #pragma once
 
 #include "stdafx.h"
+#include <string>
+#include <vector>
 
 namespace NTDExt
 {
@@ -34,7 +36,32 @@ namespace NTDExt
     
     // === 注册表操作 ===
     
-    // 解除映像劫持 (清除 Image File Execution Options)
+    // IFEO 扫描结果
+    struct IfeoEntry {
+        std::wstring exeName;     // 被劫持的 exe 名（如 "cmd.exe"）
+        std::wstring debugger;    // debugger 值（劫持目标）
+        bool ourProtect = false;  // 是否是我们自己加的保护（debugger 指向自身）
+    };
+
+    // 扫描所有 IFEO 子键，返回含 debugger 值的条目（区分系统合法调试器配置 vs 用户工具劫持）
+    std::vector<IfeoEntry> ScanIfeoHijacks();
+
+    // 清理指定 exe 的 IFEO 劫持子键
+    bool ClearSpecificIfeo(const wchar_t* exeName);
+
+    // 清理常见用户工具/安全工具的 IFEO 劫持（极域常用：cmd/taskmgr/regedit/PCHunter/ProcessExplorer/JiYuTrainer 等）
+    // 保留系统合法调试器（如 VS GBD.exe、WinDbg、ntsd）的 IFEO 配置
+    bool ClearCommonToolsIfeos(std::wstring* report = nullptr);
+
+    // 给 JiYuTrainer.exe 加 IFEO 保护：如果被极域劫持，我们把 debugger 改成指向自身
+    // 返回：true=已设置保护，false=无法访问注册表或已受保护
+    bool ProtectSelfIfeo();
+
+    // 检查 JiYuTrainer.exe 是否被 IFEO 劫持（非我们自己的保护）
+    bool IsSelfIfeoHijacked(std::wstring* outDebugger = nullptr);
+
+    // 解除映像劫持 (清除 Image File Execution Options 所有含 debugger 值的子键 —— 激进，会清除合法调试器配置)
+    // 建议用 ClearCommonToolsIfeos 替代
     bool ClearImageFileExecutionOptions();
     
     // 解除组策略限制 (任务管理器/运行/注册表/CMD 等)

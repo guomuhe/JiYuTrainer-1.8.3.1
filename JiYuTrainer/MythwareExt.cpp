@@ -666,6 +666,48 @@ std::wstring BuildCapabilityReport() {
 	if (hDev != INVALID_HANDLE_VALUE) { Rep(r, L"  TDNetFilter 设备: 可访问\r\n"); CloseHandle(hDev); }
 	else Rep(r, L"  TDNetFilter 设备: 不可访问 (err=%lu)\r\n", GetLastError());
 
+	// IFEO 扫描段
+	auto ifeos = NTDExt::ScanIfeoHijacks();
+	if (ifeos.empty()) {
+		Rep(r, L"\r\n[映像劫持 IFEO]\r\n");
+		Rep(r, L"  未检测到任何 IFEO debugger 条目（干净）\r\n");
+	} else {
+		Rep(r, L"\r\n[映像劫持 IFEO]\r\n");
+		int hijackedCount = 0, legitimateCount = 0, protectCount = 0;
+		for (auto& e : ifeos) {
+			const wchar_t* marker = L"";
+			if (e.ourProtect) { marker = L"(自护)"; protectCount++; }
+			else {
+				if (e.debugger.find(L"\\VS\\") != std::wstring::npos ||
+				    e.debugger.find(L"\\Microsoft Visual Studio") != std::wstring::npos ||
+				    e.debugger.find(L"GBD") != std::wstring::npos ||
+				    e.debugger.find(L"WinDbg") != std::wstring::npos ||
+				    e.debugger.find(L"ntsd") != std::wstring::npos) {
+					marker = L"(合法调试器)"; legitimateCount++;
+				} else {
+					marker = L"(被劫持!)"; hijackedCount++;
+				}
+			}
+			Rep(r, L"  %s -> %s %s\r\n", e.exeName.c_str(), e.debugger.c_str(), marker);
+		}
+		Rep(r, L"  合计: 劫持 %d 项 / 合法 %d 项 / 自护 %d 项\r\n", hijackedCount, legitimateCount, protectCount);
+	}
+	// 自身 IFEO 状态
+	std::wstring selfDbg;
+	if (NTDExt::IsSelfIfeoHijacked(&selfDbg))
+		Rep(r, L"  ** JiYuTrainer.exe 自身被 IFEO 劫持到: %s **\r\n", selfDbg.c_str());
+	else if (ifeos.empty() || NTDExt::IsSelfIfeoHijacked(nullptr) == false) {
+		// 可能已自护 —— 再确认
+		std::vector<NTDExt::IfeoEntry> check = NTDExt::ScanIfeoHijacks();
+		bool selfProtected = false;
+		wchar_t full[MAX_PATH] = {};
+		GetModuleFileNameW(nullptr, full, MAX_PATH);
+		const wchar_t* selfName = wcsrchr(full, L'\\');
+		selfName = selfName ? selfName + 1 : full;
+		for (auto& e : check) if (_wcsicmp(e.exeName.c_str(), selfName) == 0 && e.ourProtect) selfProtected = true;
+		Rep(r, L"  JiYuTrainer.exe 自身 IFEO: %s\r\n", selfProtected ? L"已自护" : L"未设置（安全，无劫持）");
+	}
+
 	Rep(r, L"\r\n[本程序状态]\r\n");
 	Rep(r, L"  键鼠解锁线程: %s\r\n", IsInputUnlockRunning() ? L"运行中" : L"未启动");
 	Rep(r, L"  进程防杀(ACL): %s\r\n", g_bProcessProtected ? L"已开启" : L"未开启");
@@ -773,8 +815,17 @@ bool DetachAll(std::wstring* report) {
 	r = NTDExt::ToggleWebsiteUnblock(true);
 	AddStep(log, L"解除网站限制", r); allOk = allOk && r;
 
-	r = NTDExt::ClearImageFileExecutionOptions();
-	AddStep(log, L"解除映像劫持", r); allOk = allOk && r;
+	// 精细化 IFEO 清理（只清极域常用工具，保留合法调试器配置）
+	std::wstring ifeoLog;
+	r = NTDExt::ClearCommonToolsIfeos(&ifeoLog);
+	AddStep(log, L"解除映像劫持（精细化）", r); allOk = allOk && r;
+	if (!ifeoLog.empty()) log += L"  " + ifeoLog;
+
+	// 给自己加 IFEO 保护（反制极域的反劫持）
+	if (NTDExt::ProtectSelfIfeo())
+		AddStep(log, L"开启自身 IFEO 保护", true);
+	else
+		AddStep(log, L"开启自身 IFEO 保护（需管理员）", false);
 
 	r = NTDExt::ClearGroupPolicyRestrictions();
 	AddStep(log, L"解除组策略限制", r); allOk = allOk && r;
