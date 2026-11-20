@@ -64,8 +64,16 @@ namespace NTDExt
     // 建议用 ClearCommonToolsIfeos 替代
     bool ClearImageFileExecutionOptions();
     
-    // 解除组策略限制 (任务管理器/运行/注册表/CMD 等)
+    // 解除组策略限制 (任务管理器/运行/注册表/CMD 等) —— 旧接口保持兼容
     bool ClearGroupPolicyRestrictions();
+
+    // 组策略扫描（公开接口）：返回被极域等程序设置过的策略条目
+    // 复用 IfeoEntry 结构：exeName = "HKLM\\subkey\\valueName"，debugger = 实际值或 "(数组类型)"
+    std::vector<IfeoEntry> ScanPolicyHijacks();
+
+    // 新接口：带扫描前备份 + DisallowRun 数组删除 + gpupdate /force 刷新
+    // 返回清理成功的条目数，report 写入操作明细
+    int ClearGroupPolicyRestrictionsEx(std::wstring* report = nullptr);
     
     // === 窗口操作 ===
     

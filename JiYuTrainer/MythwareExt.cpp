@@ -696,8 +696,7 @@ std::wstring BuildCapabilityReport() {
 	std::wstring selfDbg;
 	if (NTDExt::IsSelfIfeoHijacked(&selfDbg))
 		Rep(r, L"  ** JiYuTrainer.exe 自身被 IFEO 劫持到: %s **\r\n", selfDbg.c_str());
-	else if (ifeos.empty() || NTDExt::IsSelfIfeoHijacked(nullptr) == false) {
-		// 可能已自护 —— 再确认
+	else {
 		std::vector<NTDExt::IfeoEntry> check = NTDExt::ScanIfeoHijacks();
 		bool selfProtected = false;
 		wchar_t full[MAX_PATH] = {};
@@ -706,6 +705,19 @@ std::wstring BuildCapabilityReport() {
 		selfName = selfName ? selfName + 1 : full;
 		for (auto& e : check) if (_wcsicmp(e.exeName.c_str(), selfName) == 0 && e.ourProtect) selfProtected = true;
 		Rep(r, L"  JiYuTrainer.exe 自身 IFEO: %s\r\n", selfProtected ? L"已自护" : L"未设置（安全，无劫持）");
+	}
+
+	// 组策略扫描段
+	auto pols = NTDExt::ScanPolicyHijacks();
+	if (pols.empty()) {
+		Rep(r, L"\r\n[组策略限制]\r\n");
+		Rep(r, L"  未检测到任何极域常用策略限制（干净）\r\n");
+	} else {
+		Rep(r, L"\r\n[组策略限制]\r\n");
+		for (auto& p : pols) {
+			Rep(r, L"  %s -> %s (被设置!)\r\n", p.exeName.c_str(), p.debugger.c_str());
+		}
+		Rep(r, L"  合计: %d 项被设置\r\n", (int)pols.size());
 	}
 
 	Rep(r, L"\r\n[本程序状态]\r\n");
@@ -827,8 +839,11 @@ bool DetachAll(std::wstring* report) {
 	else
 		AddStep(log, L"开启自身 IFEO 保护（需管理员）", false);
 
-	r = NTDExt::ClearGroupPolicyRestrictions();
-	AddStep(log, L"解除组策略限制", r); allOk = allOk && r;
+	std::wstring polReport;
+	int polCleared = NTDExt::ClearGroupPolicyRestrictionsEx(&polReport);
+	bool polOk = polCleared >= 0;
+	AddStep(log, L"解除组策略限制（明细见下）", polOk);
+	log += L"  (组策略清理明细)\r\n" + polReport + L"\r\n";
 
 	r = NTDExt::UnlockJiyuAntiKill();
 	AddStep(log, L"解除极域防杀钩子", r); allOk = allOk && r;

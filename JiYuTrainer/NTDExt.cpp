@@ -487,6 +487,25 @@ bool StartService(const wchar_t* serviceName)
 static const wchar_t* kIfeoRoot =
     L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options";
 
+// Wow6432Node 分支（64 位系统下 32 位进程的注册表重定向路径）
+static const wchar_t* kIfeoRootWow6432 =
+    L"SOFTWARE\\WOW6432Node\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options";
+
+// 检查当前进程是否 32 位在 64 位系统上运行（WOW64）
+static bool IsCurrentProcessWow64() {
+    BOOL wow = FALSE;
+    if (!IsWow64Process(GetCurrentProcess(), &wow)) return false;
+    return wow == TRUE;
+}
+
+// 返回该注册表根下当前进程视角能看到的 IFEO 根路径
+static const wchar_t* EffectiveIfeoRoot(HKEY hRoot) {
+    // 32 位进程在 64 位系统下 HKLM 是重定向到 WOW6432Node 的
+    // 但 HKCU 不重定向，HKCU 直接看到原生位置
+    if (hRoot == HKEY_LOCAL_MACHINE && IsCurrentProcessWow64()) return kIfeoRootWow6432;
+    return kIfeoRoot;
+}
+
 // 极域/恶意软件常用的 IFEO 目标（清理清单）
 static const wchar_t* kCommonToolTargets[] = {
     L"cmd.exe", L"cmd", L"command.exe",
@@ -556,42 +575,63 @@ static bool IsLegitimateDebugger(const wchar_t* dbgPath) {
     return false;
 }
 
-// 读指定 IFEO 子键的 debugger 值；*dbg 为空表示没有（HKLM + HKCU 合并，HKLM 优先）
+// 读指定 IFEO 子键的 debugger 值；双侧视角都查（默认 + KEY_WOW64_64KEY），HKLM 优先
 static bool QueryIfeoDebugger(const wchar_t* exeName, std::wstring* dbg) {
-    HKEY hRoots[2] = { HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER };
-    for (int i = 0; i < 2; i++) {
-        HKEY hSub;
-        if (RegOpenKeyExW(hRoots[i], (std::wstring(kIfeoRoot) + L"\\" + exeName).c_str(),
-                          0, KEY_QUERY_VALUE, &hSub) != ERROR_SUCCESS) continue;
-        wchar_t data[2048] = {};
-        DWORD dataSize = sizeof(data);
-        DWORD type = 0;
-        LONG q = RegQueryValueExW(hSub, L"debugger", NULL, &type, (LPBYTE)data, &dataSize);
-        RegCloseKey(hSub);
-        if (q == ERROR_SUCCESS) {
-            if (dbg) *dbg = data;
-            return true;
+    // 先查 HKLM 双侧，再查 HKCU 双侧
+    const HKEY hives[] = { HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER };
+    REGSAM views[] = { 0, KEY_WOW64_64KEY };
+    for (int h = 0; h < 2; h++) {
+        for (auto v : views) {
+            const wchar_t* root = EffectiveIfeoRoot(hives[h]);
+            if (v & KEY_WOW64_64KEY) {
+                // KEY_WOW64_64KEY 强制看 64 位原生注册表
+                root = (hives[h] == HKEY_LOCAL_MACHINE) ? kIfeoRoot : kIfeoRoot;
+            }
+            HKEY hSub;
+            if (RegOpenKeyExW(hives[h], (std::wstring(root) + L"\\" + exeName).c_str(),
+                              0, KEY_QUERY_VALUE | v, &hSub) != ERROR_SUCCESS) continue;
+            wchar_t data[2048] = {};
+            DWORD dataSize = sizeof(data);
+            DWORD type = 0;
+            LONG q = RegQueryValueExW(hSub, L"debugger", NULL, &type, (LPBYTE)data, &dataSize);
+            RegCloseKey(hSub);
+            if (q == ERROR_SUCCESS) {
+                if (dbg) *dbg = data;
+                return true;
+            }
         }
     }
     return false;
 }
 
-// 从 HKLM 和 HKCU 都删除指定 IFEO 子键
-static bool DeleteIfeoKey(const wchar_t* exeName) {
-    std::wstring full = std::wstring(kIfeoRoot) + L"\\" + exeName;
-    bool lm = RegDeleteKeyW(HKEY_LOCAL_MACHINE, full.c_str()) == ERROR_SUCCESS ||
-              GetLastError() == ERROR_FILE_NOT_FOUND;
-    bool cu = RegDeleteKeyW(HKEY_CURRENT_USER, full.c_str()) == ERROR_SUCCESS ||
-              GetLastError() == ERROR_FILE_NOT_FOUND;
-    return lm || cu;
+// 在两侧（32 位重定向 + 64 位原生）都删除 IFEO 子键；HKLM 和 HKCU 都删
+static bool DeleteIfeoKeyBothViews(const wchar_t* exeName) {
+    const wchar_t* roots[] = { kIfeoRoot, kIfeoRootWow6432 };
+    const HKEY hives[] = { HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER };
+    bool didDelete = false;
+    for (int h = 0; h < 2; h++) {
+        for (int r = 0; r < 2; r++) {
+            std::wstring full = std::wstring(roots[r]) + L"\\" + exeName;
+            if (RegDeleteKeyW(hives[h], full.c_str()) == ERROR_SUCCESS) didDelete = true;
+            else { DWORD err = GetLastError(); if (err != ERROR_FILE_NOT_FOUND && err != ERROR_ACCESS_DENIED) {/* 忽略 */} }
+        }
+    }
+    return didDelete;
 }
 
-// 在 hRoot 指定的根下枚举 IFEO
-static void EnumerateIfeoFrom(HKEY hRoot, std::vector<IfeoEntry>* out,
+// 从 HKLM 和 HKCU 默认视角都删除（兼容旧接口）
+static bool DeleteIfeoKey(const wchar_t* exeName) {
+    return DeleteIfeoKeyBothViews(exeName);
+}
+
+// 在 hRoot 指定的根下枚举 IFEO；samFlags 控制 WOW64 视角（KEY_WOW64_32KEY / KEY_WOW64_64KEY / 0 默认）
+static void EnumerateIfeoFrom(HKEY hRoot, REGSAM samFlags,
+                              std::vector<IfeoEntry>* out,
                               const wchar_t* selfPath, const wchar_t* selfName) {
     HKEY hParentKey;
-    if (RegOpenKeyExW(hRoot, kIfeoRoot, 0,
-                      KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE, &hParentKey) != ERROR_SUCCESS)
+    const wchar_t* root = EffectiveIfeoRoot(hRoot);
+    if (RegOpenKeyExW(hRoot, root, 0,
+                      KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE | samFlags, &hParentKey) != ERROR_SUCCESS)
         return;
 
     wchar_t subkeyName[256];
@@ -604,10 +644,10 @@ static void EnumerateIfeoFrom(HKEY hRoot, std::vector<IfeoEntry>* out,
         if (ret != ERROR_SUCCESS) break;
 
         std::wstring dbg;
-        // 读 HKLM 下的 debugger（HKLM 优先级高于 HKCU）
+        // 读同一 WOW64 视角下的 debugger
         HKEY hSub;
-        if (RegOpenKeyExW(hRoot, (std::wstring(kIfeoRoot) + L"\\" + subkeyName).c_str(),
-                          0, KEY_QUERY_VALUE, &hSub) == ERROR_SUCCESS) {
+        if (RegOpenKeyExW(hRoot, (std::wstring(root) + L"\\" + subkeyName).c_str(),
+                          0, KEY_QUERY_VALUE | samFlags, &hSub) == ERROR_SUCCESS) {
             wchar_t data[2048] = {};
             DWORD dataSize = sizeof(data);
             DWORD type = 0;
@@ -627,6 +667,32 @@ static void EnumerateIfeoFrom(HKEY hRoot, std::vector<IfeoEntry>* out,
     RegCloseKey(hParentKey);
 }
 
+// 注册表备份：reg export 到 %TEMP%，返回文件路径（空串表示失败）
+static std::wstring RegExportKey(const wchar_t* regPath, const wchar_t* tag) {
+    wchar_t tmp[MAX_PATH] = {};
+    GetTempPathW(MAX_PATH, tmp);
+    SYSTEMTIME st = {}; GetLocalTime(&st);
+    wchar_t out[MAX_PATH] = {};
+    swprintf_s(out, L"%s\\JiYuTrainer-%02d%02d%02d-%02d%02d%02d-%s.reg",
+               tmp, st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, tag);
+
+    wchar_t sysroot[MAX_PATH] = {};
+    ExpandEnvironmentStringsW(L"%SystemRoot%", sysroot, MAX_PATH);
+    wchar_t cmd[MAX_PATH * 2] = {};
+    swprintf_s(cmd, L"\"%s\\System32\\reg.exe\" export \"%s\" \"%s\" /y", sysroot, regPath, out);
+
+    STARTUPINFOW si = { sizeof(si) };
+    PROCESS_INFORMATION pi = {};
+    if (!CreateProcessW(nullptr, cmd, nullptr, nullptr, FALSE,
+                        CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) return L"";
+    WaitForSingleObject(pi.hProcess, 15000);
+    DWORD exitCode = 1;
+    GetExitCodeProcess(pi.hProcess, &exitCode);
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+    return exitCode == 0 ? std::wstring(out) : L"";
+}
+
 // 自 exe 完整路径提取基名（不含路径）
 static std::wstring SelfBaseName() {
     wchar_t full[MAX_PATH] = {};
@@ -641,11 +707,13 @@ std::vector<IfeoEntry> ScanIfeoHijacks() {
     std::wstring selfName = SelfBaseName();
 
     std::vector<IfeoEntry> result;
-    // 先扫 HKLM
-    EnumerateIfeoFrom(HKEY_LOCAL_MACHINE, &result, selfPath, selfName.c_str());
-    // 再扫 HKCU（去重）
-    EnumerateIfeoFrom(HKEY_CURRENT_USER, &result, selfPath, selfName.c_str());
-    // 去重（同一 exe 两边都有的话只保留一份，HKLM 优先已自然排在前面）
+    // 双侧扫描：默认视角（0）+ 强制 64 位原生视角（KEY_WOW64_64KEY）
+    REGSAM views[] = { 0, KEY_WOW64_64KEY };
+    for (auto v : views) {
+        EnumerateIfeoFrom(HKEY_LOCAL_MACHINE, v, &result, selfPath, selfName.c_str());
+        EnumerateIfeoFrom(HKEY_CURRENT_USER,  v, &result, selfPath, selfName.c_str());
+    }
+    // 去重（同一 exe 两边都有的话只保留一份）
     std::vector<IfeoEntry> unique;
     for (auto& e : result) {
         bool dup = false;
@@ -663,22 +731,30 @@ bool ClearSpecificIfeo(const wchar_t* exeName) {
 bool ClearCommonToolsIfeos(std::wstring* report) {
     auto entries = ScanIfeoHijacks();
     std::wstring log;
+
+    // 清理前备份：原生 + WOW64 双侧
+    if (report) {
+        std::wstring bk1 = RegExportKey(L"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options", L"ifeo-hklm");
+        std::wstring bk2 = RegExportKey(L"HKLM\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options", L"ifeo-hklm-wow6432");
+        std::wstring bk3 = RegExportKey(L"HKCU\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options", L"ifeo-hkcu");
+        if (!bk1.empty()) log += L"[备份  ] " + bk1 + L"\r\n";
+        if (!bk2.empty()) log += L"[备份  ] " + bk2 + L"\r\n";
+        if (!bk3.empty()) log += L"[备份  ] " + bk3 + L"\r\n";
+    }
+
     int cleared = 0;
     bool allOk = true;
     for (auto& e : entries) {
-        // 跳过系统合法调试器配置
         if (IsLegitimateDebugger(e.debugger.c_str())) {
             if (report) log += L"[保留合法] " + e.exeName + L" -> " + e.debugger + L"\r\n";
             continue;
         }
-        // 跳过我们自己加的保护
         if (e.ourProtect) {
             if (report) log += L"[保留自护 ] " + e.exeName + L" -> self\r\n";
             continue;
         }
-        // 只清理常见目标（极域常用的工具限制）
         if (IsCommonTool(e.exeName.c_str())) {
-            bool ok = DeleteIfeoKey(e.exeName.c_str());
+            bool ok = DeleteIfeoKeyBothViews(e.exeName.c_str());
             if (ok) cleared++;
             else allOk = false;
             if (report) log += std::wstring(ok ? L"[清除  ] " : L"[失败  ] ") + e.exeName + L" -> " + e.debugger + L"\r\n";
@@ -694,27 +770,32 @@ bool ProtectSelfIfeo() {
     wchar_t selfPath[MAX_PATH] = {};
     GetModuleFileNameW(nullptr, selfPath, MAX_PATH);
     std::wstring selfName = SelfBaseName();
-    std::wstring fullPath = std::wstring(kIfeoRoot) + L"\\" + selfName;
+
+    // 双侧写入：HKLM + HKCU，原生 + WOW6432
+    const wchar_t* roots[] = { kIfeoRoot, kIfeoRootWow6432 };
+    const HKEY hives[] = { HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER };
 
     bool wroteAny = false;
-    HKEY roots[2] = { HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER };
-    for (int i = 0; i < 2; i++) {
-        HKEY hKey;
-        LONG ret = RegCreateKeyExW(roots[i], fullPath.c_str(), 0, NULL, 0, KEY_SET_VALUE, NULL, &hKey, NULL);
-        if (ret != ERROR_SUCCESS) continue;
+    for (int h = 0; h < 2; h++) {
+        for (int r = 0; r < 2; r++) {
+            std::wstring fullPath = std::wstring(roots[r]) + L"\\" + selfName;
+            HKEY hKey;
+            LONG ret = RegCreateKeyExW(hives[h], fullPath.c_str(), 0, NULL, 0, KEY_SET_VALUE, NULL, &hKey, NULL);
+            if (ret != ERROR_SUCCESS) continue;
 
-        // 检查现有 debugger —— 如果已经是指向自己了就跳过（已保护）
-        wchar_t cur[2048] = {};
-        DWORD cs = sizeof(cur);
-        DWORD ct = 0;
-        if (RegQueryValueExW(hKey, L"debugger", NULL, &ct, (LPBYTE)cur, &cs) == ERROR_SUCCESS) {
-            if (_wcsicmp(cur, selfPath) == 0) { RegCloseKey(hKey); continue; }
+            // 已受保护则跳过
+            wchar_t cur[2048] = {};
+            DWORD cs = sizeof(cur);
+            DWORD ct = 0;
+            if (RegQueryValueExW(hKey, L"debugger", NULL, &ct, (LPBYTE)cur, &cs) == ERROR_SUCCESS) {
+                if (_wcsicmp(cur, selfPath) == 0) { RegCloseKey(hKey); continue; }
+            }
+
+            ret = RegSetValueExW(hKey, L"debugger", 0, REG_SZ, (const BYTE*)selfPath,
+                                 (DWORD)((wcslen(selfPath) + 1) * sizeof(wchar_t)));
+            RegCloseKey(hKey);
+            if (ret == ERROR_SUCCESS) wroteAny = true;
         }
-
-        ret = RegSetValueExW(hKey, L"debugger", 0, REG_SZ, (const BYTE*)selfPath,
-                             (DWORD)((wcslen(selfPath) + 1) * sizeof(wchar_t)));
-        RegCloseKey(hKey);
-        if (ret == ERROR_SUCCESS) wroteAny = true;
     }
     return wroteAny;
 }
@@ -787,39 +868,206 @@ static bool SetRegDWord(HKEY hRoot, const wchar_t* subkey, const wchar_t* valueN
     return ret == ERROR_SUCCESS;
 }
 
-bool ClearGroupPolicyRestrictions()
-{
-    bool result = true;
-    
-    // 用户级
-    result &= SetRegDWord(HKEY_CURRENT_USER, 
-        L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System", 
-        L"DisableTaskMgr", 0);
-    result &= SetRegDWord(HKEY_CURRENT_USER, 
-        L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System", 
-        L"DisableRegistryTools", 0);
-    result &= SetRegDWord(HKEY_CURRENT_USER, 
-        L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer", 
-        L"NoRun", 0);
-    result &= SetRegDWord(HKEY_CURRENT_USER, 
-        L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer", 
-        L"NoControlPanel", 0);
-    result &= SetRegDWord(HKEY_CURRENT_USER, 
-        L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\WinOldApp", 
-        L"Disabled", 0);
-    
-    // 系统级
-    result &= SetRegDWord(HKEY_LOCAL_MACHINE,
-        L"Software\\Policies\\Microsoft\\Windows\\System",
-        L"DisableCMD", 0);
-    result &= SetRegDWord(HKEY_LOCAL_MACHINE,
-        L"Software\\Policies\\Microsoft\\Windows\\System",
-        L"DisableRegedit", 0);
-    result &= SetRegDWord(HKEY_LOCAL_MACHINE,
-        L"Software\\Policies\\Microsoft\\Windows\\Explorer",
-        L"NoRun", 0);
-    
+// ==================== 组策略扫描/清理 ====================
+
+struct PolicyTarget {
+    HKEY hRoot;
+    const wchar_t* subkey;
+    const wchar_t* valueName;
+    DWORD expectedBadValue;   // 极域设置的限制值（通常 = 1）
+};
+
+// 极域/恶意软件常用的组策略限制清单（末尾必须有哨兵 subkey=nullptr）
+static const PolicyTarget kPolicyTargets[] = {
+    // === 用户级（HKCU ===
+    { HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",   L"DisableTaskMgr",        1 },
+    { HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",   L"DisableRegistryTools",  1 },
+    { HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",   L"DisableChangePassword", 1 },
+    { HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer", L"NoRun",                 1 },
+    { HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer", L"NoControlPanel",        1 },
+    { HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer", L"HideDrives",            1 },
+    { HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer", L"DisallowRun",           0 /* 数组型，特殊处理 */ },
+    { HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\WinOldApp", L"Disabled",            1 },
+    // === 系统级（HKLM ===
+    { HKEY_LOCAL_MACHINE, L"Software\\Policies\\Microsoft\\Windows\\System", L"DisableCMD",   1 },
+    { HKEY_LOCAL_MACHINE, L"Software\\Policies\\Microsoft\\Windows\\System", L"DisableRegedit", 1 },
+    { HKEY_LOCAL_MACHINE, L"Software\\Policies\\Microsoft\\Windows\\Explorer", L"NoRun",       1 },
+    { HKEY_LOCAL_MACHINE, L"Software\\Policies\\Microsoft\\Windows\\Explorer", L"NoControlPanel", 1 },
+    { HKEY_LOCAL_MACHINE, L"Software\\Policies\\Microsoft\\Windows\\Explorer", L"DisallowRun", 0 /* 数组型 */ },
+    // === 哨兵 ===
+    { HKEY_CURRENT_USER, nullptr, nullptr, 0 },
+};
+
+static const wchar_t* kPolicyTargetSubkeys[] = {
+    L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",
+    L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer",
+    L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\WinOldApp",
+    L"Software\\Policies\\Microsoft\\Windows\\System",
+    L"Software\\Policies\\Microsoft\\Windows\\Explorer",
+    nullptr
+};
+
+// 组策略扫描结果
+struct PolicyEntry {
+    HKEY hRoot;
+    std::wstring subkey;
+    std::wstring valueName;
+    bool hasValue = false;
+    DWORD value = 0;
+    bool isArray = false;  // DisallowRun 这类 REG_DWORD 数组型
+};
+
+// 扫描所有极域常用策略，返回被设置过的条目
+// 判定规则：DWORD 值 != 0 才算"被限制"；数组/字符串型键存在就算
+static std::vector<PolicyEntry> ScanPolicyEntries() {
+    std::vector<PolicyEntry> result;
+    for (int i = 0; kPolicyTargets[i].subkey; i++) {
+        const PolicyTarget& t = kPolicyTargets[i];
+        HKEY hKey;
+        if (RegOpenKeyExW(t.hRoot, t.subkey, 0, KEY_QUERY_VALUE, &hKey) != ERROR_SUCCESS) continue;
+
+        DWORD dataSize = 0;
+        DWORD type = 0;
+        LONG q = RegQueryValueExW(hKey, t.valueName, NULL, &type, NULL, &dataSize);
+        if (q != ERROR_SUCCESS || dataSize == 0) { RegCloseKey(hKey); continue; }
+
+        if (type == REG_DWORD && dataSize >= sizeof(DWORD)) {
+            DWORD buf = 0;
+            RegQueryValueExW(hKey, t.valueName, NULL, &type, (LPBYTE)&buf, &dataSize);
+            // 值为 0 等于没限制，不算"被极域改过"
+            if (buf == 0) { RegCloseKey(hKey); continue; }
+            PolicyEntry pe;
+            pe.hRoot = t.hRoot;
+            pe.subkey = t.subkey;
+            pe.valueName = t.valueName;
+            pe.hasValue = true;
+            pe.value = buf;
+            pe.isArray = false;
+            result.push_back(pe);
+        } else {
+            // 数组型或字符串型：存在就算被设置过（系统默认不会有 DisallowRun 这种键）
+            PolicyEntry pe;
+            pe.hRoot = t.hRoot;
+            pe.subkey = t.subkey;
+            pe.valueName = t.valueName;
+            pe.hasValue = true;
+            pe.isArray = true;
+            result.push_back(pe);
+        }
+        RegCloseKey(hKey);
+    }
     return result;
+}
+
+// 强制刷新组策略 (gpupdate /force)
+static bool RunGpUpdate() {
+    wchar_t sysroot[MAX_PATH] = {};
+    ExpandEnvironmentStringsW(L"%SystemRoot%", sysroot, MAX_PATH);
+    wchar_t cmd[MAX_PATH * 2] = {};
+    swprintf_s(cmd, L"\"%s\\System32\\gpupdate.exe\" /force", sysroot);
+    STARTUPINFOW si = { sizeof(si) };
+    PROCESS_INFORMATION pi = {};
+    if (!CreateProcessW(nullptr, cmd, nullptr, nullptr, FALSE,
+                        CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) return false;
+    // 等 20 秒，gpupdate 比较慢
+    WaitForSingleObject(pi.hProcess, 20000);
+    DWORD exitCode = 1;
+    GetExitCodeProcess(pi.hProcess, &exitCode);
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+    return exitCode == 0;
+}
+
+// 组策略扫描（公开接口）：返回被极域等程序设置过的策略条目
+std::vector<IfeoEntry> ScanPolicyHijacks() {
+    // 复用 IfeoEntry 结构不太合适，这里单独用 PolicyEntry
+    // 为了让外部调用（BuildCapabilityReport）能拿到，先复用现有数据
+    std::vector<PolicyEntry> pols = ScanPolicyEntries();
+    std::vector<IfeoEntry> out;
+    for (auto& p : pols) {
+        if (!p.hasValue) continue;
+        IfeoEntry e;
+        wchar_t rootTag[32] = {};
+        wcscpy_s(rootTag, (p.hRoot == HKEY_LOCAL_MACHINE) ? L"HKLM" : L"HKCU");
+        e.exeName = std::wstring(rootTag) + L"\\" + p.subkey + L"\\" + p.valueName;
+        if (p.isArray) e.debugger = L"(数组/列表类型)";
+        else { wchar_t v[32] = {}; swprintf_s(v, L"= 0x%08X", p.value); e.debugger = v; }
+        e.ourProtect = false;
+        out.push_back(e);
+    }
+    return out;
+}
+
+// 旧兼容接口（ClearGroupPolicyRestrictions），新实现会：
+//   1. reg export 备份所有 Policy 相关注册表路径
+//   2. 批量置 0（对 DWORD 型）或删除 DisallowRun 数组/Explorer\DisallowRun 键
+//   3. gpupdate /force 使清理生效
+// 返回清理成功的条目数（0 表示都已经是安全状态）
+int ClearGroupPolicyRestrictionsEx(std::wstring* report) {
+    std::wstring log;
+
+    // === 备份 ===
+    if (report) {
+        const wchar_t* backupPaths[] = {
+            L"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies",
+            L"HKLM\\Software\\Policies\\Microsoft\\Windows",
+            nullptr
+        };
+        for (int i = 0; backupPaths[i]; i++) {
+            std::wstring bk = RegExportKey(backupPaths[i], (i == 0) ? L"pols-hkcu" : L"pols-hklm");
+            if (!bk.empty()) log += L"[备份  ] " + bk + L"\r\n";
+        }
+    }
+
+    // === 处理 DisallowRun 数组键 (极域常用的软件黑名单) ===
+    // HKCU\...\Explorer\DisallowRun 键下有 1,2,3,... 命名的字符串值
+    const wchar_t* disallowRunPaths[] = {
+        L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\DisallowRun",
+        L"Software\\Policies\\Microsoft\\Windows\\Explorer\\DisallowRun",
+        nullptr
+    };
+    int cleared = 0;
+    for (int i = 0; disallowRunPaths[i]; i++) {
+        HKEY h;
+        HKEY roots2[] = { HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE };
+        for (auto r : roots2) {
+            if (RegOpenKeyExW(r, disallowRunPaths[i], 0, KEY_ALL_ACCESS, &h) == ERROR_SUCCESS) {
+                if (RegDeleteKeyW(r, disallowRunPaths[i]) == ERROR_SUCCESS) {
+                    cleared++;
+                    if (report) log += L"[清除  ] " + std::wstring((r == HKEY_LOCAL_MACHINE) ? L"HKLM" : L"HKCU") +
+                                      L"\\" + disallowRunPaths[i] + L"\r\n";
+                }
+                RegCloseKey(h);
+            }
+        }
+    }
+
+    // === 批量置 0 ===
+    for (int i = 0; kPolicyTargets[i].subkey; i++) {
+        const PolicyTarget& t = kPolicyTargets[i];
+        if (_wcsicmp(t.valueName, L"DisallowRun") == 0) continue;  // 数组型已单独处理
+        if (SetRegDWord(t.hRoot, t.subkey, t.valueName, 0)) {
+            cleared++;
+            if (report) log += L"[置0   ] " + std::wstring((t.hRoot == HKEY_LOCAL_MACHINE) ? L"HKLM" : L"HKCU") +
+                              L"\\" + t.subkey + L"\\" + t.valueName + L" = 0\r\n";
+        } else {
+            // 已经是 0 或没有值 —— 跳过（不是"被极域改过"的状态）
+        }
+    }
+
+    // === 刷新组策略 ===
+    if (report) log += L"[刷新  ] gpupdate /force ...\r\n";
+    bool gpok = RunGpUpdate();
+    if (report) log += std::wstring(gpok ? L"[刷新  ] gpupdate 完成\r\n" : L"[刷新  ] gpupdate 返回非零（可能需要手动注销/重启）\r\n");
+
+    if (report) *report = log;
+    return cleared;
+}
+
+// 旧接口保持兼容：返回 bool，true = 至少清了一个或都已经安全
+bool ClearGroupPolicyRestrictions() {
+    int cleared = ClearGroupPolicyRestrictionsEx(nullptr);
+    return cleared >= 0;   // 0=都已安全也算成功
 }
 
 // ==================== 窗口操作 ====================
